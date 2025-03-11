@@ -1,0 +1,20 @@
+{
+  "name": "apisql",
+  "version": "1.0.0",
+  "description": "l'api sql du projet stock collocation",
+  "license": "ISC",
+  "author": "groupe stock collocation",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch & node --watch dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "install": "^0.13.0",
+    "npm": "^11.2.0",
+    "typescript": "^5.8.2"
+  }
+}
