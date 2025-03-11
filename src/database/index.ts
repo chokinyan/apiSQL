@@ -7,6 +7,12 @@ export interface DBEventListener {
     callback: (data: any) => void;
 }
 
+export interface TableConfig {
+    userTable: string;
+    aouthTable: string;
+    itemTable: string;
+}
+
 export interface DBConfig {
     host: string;
     port: number;
@@ -15,7 +21,7 @@ export interface DBConfig {
     database: string;
     userCollum: string;
     passwordCollum: string;
-    table: string;
+    table: TableConfig;
 }
 
 export default class DB {
@@ -28,7 +34,7 @@ export default class DB {
     public database: string;
     public userCollum: string;
     public passwordCollum: string;
-    public table: string;
+    public table: TableConfig;
 
     constructor(config: DBConfig) {
         this.host = config.host;
@@ -85,9 +91,9 @@ export default class DB {
     public GetUser(user: string, password: string): Promise<any> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
-                this.pollConnexion.query(`SELECT * FROM ${this.database}.${this.table} WHERE ${this.userCollum} = ? AND ${this.passwordCollum} = ?`, [user, password])
+                this.pollConnexion.query(`SELECT * FROM ${this.database}.${this.table.userTable} WHERE ${this.userCollum} = ? AND ${this.passwordCollum} = ?`, [user, password])
                     .then((res) => {
-                        const success = res.length > 0;
+                        const success = res.length === 1;
                         this.emitEvent('query', { type: 'GetUser', success: success, user: user, password: password, connexion: this.pollConnexion });
                         resolve(success);
                     })
@@ -98,6 +104,27 @@ export default class DB {
             } else {
                 const err = "pas de poll Con";
                 this.emitEvent('error', { message: err, operation: 'GetUser' });
+                reject(new Error(err));
+            }
+        });
+    }
+
+    public CreatAOuth(user : string){
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.pollConnexion.query(`INSERT INTO ${this.database}.${this.table} (${this.userCollum}) VALUES (?)`, [user])
+                    .then((res) => {
+                        const success = res.affectedRows === 1;
+                        this.emitEvent('query', { type: 'CreatAOuth', success: success, user: user, connexion: this.pollConnexion });
+                        resolve(success);
+                    })
+                    .catch((err) => {
+                        this.emitEvent('error', { message: 'Query failed', operation: 'CreatAOuth', error: err });
+                        reject(err);
+                    });
+            } else {
+                const err = "pas de poll Con";
+                this.emitEvent('error', { message: err, operation: 'CreatAOuth' });
                 reject(new Error(err));
             }
         });

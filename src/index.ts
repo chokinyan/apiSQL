@@ -10,11 +10,17 @@ const db = new database({
     database: process.env.DB_DATABASE as string,
     userCollum: process.env.DB_USER_COLLUM as string,
     passwordCollum: process.env.DB_PASSWORD_COLLUM as string,
-    table: process.env.DB_TABLE as string,
+    table: {
+        userTable: process.env.DB_USER_TABLE as string,
+        aouthTable: process.env.DB_AOUTH_TABLE as string,
+        itemTable: process.env.DB_ITEM_TABLE as string,
+    }
 });
 
 const app = express();
 const port = 3000;
+
+const connectedUsers : Array<user> = [];
 
 app.post('/Connect', (req, res) => {
     if(req.query.user && req.query.password) {

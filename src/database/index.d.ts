@@ -7,6 +7,12 @@ export interface DBEventListener {
     callback: (data: any) => void;
 }
 
+export interface TableConfig {
+    userTable: string;
+    aouthTable: string;
+    itemTable: string;
+}
+
 export interface DBConfig {
     host: string;
     port: number;
@@ -15,7 +21,7 @@ export interface DBConfig {
     database: string;
     userCollum: string;
     passwordCollum: string;
-    table: string;
+    table: TableConfig;
 }
 
 export default class DB {
