@@ -88,13 +88,16 @@ export default class DB {
         });
     }
 
-    public GetUser(user: string, password: string): Promise<any> {
+    public GetUser(user: string, password: string): Promise<boolean | number> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
-                this.pollConnexion.query(`SELECT * FROM ${this.database}.${this.table.userTable} WHERE ${this.userCollum} = ? AND ${this.passwordCollum} = ?`, [user, password])
+                this.pollConnexion.query(`SELECT id FROM ${this.database}.${this.table.userTable} WHERE ${this.userCollum} = ? AND ${this.passwordCollum} = ?`, [user, password])
                     .then((res) => {
                         const success = res.length === 1;
                         this.emitEvent('query', { type: 'GetUser', success: success, user: user, password: password, connexion: this.pollConnexion });
+                        if(success) {
+                            resolve(res[0]);
+                        }
                         resolve(success);
                     })
                     .catch((err) => {
