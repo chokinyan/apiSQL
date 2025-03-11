@@ -109,27 +109,6 @@ export default class DB {
         });
     }
 
-    public CreatAOuth(user : string){
-        return new Promise((resolve, reject) => {
-            if (this.pollConnexion) {
-                this.pollConnexion.query(`INSERT INTO ${this.database}.${this.table} (${this.userCollum}) VALUES (?)`, [user])
-                    .then((res) => {
-                        const success = res.affectedRows === 1;
-                        this.emitEvent('query', { type: 'CreatAOuth', success: success, user: user, connexion: this.pollConnexion });
-                        resolve(success);
-                    })
-                    .catch((err) => {
-                        this.emitEvent('error', { message: 'Query failed', operation: 'CreatAOuth', error: err });
-                        reject(err);
-                    });
-            } else {
-                const err = "pas de poll Con";
-                this.emitEvent('error', { message: err, operation: 'CreatAOuth' });
-                reject(new Error(err));
-            }
-        });
-    }
-
     public async CloseConnexion(): Promise<void> {
         if (this.pollConnexion) {
             await this.pollConnexion.release();
