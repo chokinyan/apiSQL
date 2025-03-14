@@ -8,7 +8,8 @@ const db : database = new database({
     user: process.env.DB_USER as string,
     password: process.env.DB_PASSWORD as string,
     database: process.env.DB_DATABASE as string,
-    userCollum: process.env.DB_USER_COLLUM as string,
+    userCollum: process.env.DB_USER_NAME_COLLUM as string,
+    prenomCollum: process.env.DB_USER_COLLUM as string,
     passwordCollum: process.env.DB_PASSWORD_COLLUM as string,
     table: {
         userTable: process.env.DB_USER_TABLE as string,

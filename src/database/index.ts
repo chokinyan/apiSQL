@@ -20,6 +20,7 @@ export interface DBConfig {
     password: string;
     database: string;
     userCollum: string;
+    prenomCollum: string;
     passwordCollum: string;
     table: TableConfig;
 }
@@ -33,6 +34,7 @@ export default class DB {
     public password: string;
     public database: string;
     public userCollum: string;
+    public prenomCollum: string;
     public passwordCollum: string;
     public table: TableConfig;
 
@@ -43,6 +45,7 @@ export default class DB {
         this.password = config.password;
         this.database = config.database;
         this.userCollum = config.userCollum;
+        this.prenomCollum = config.prenomCollum;
         this.passwordCollum = config.passwordCollum;
         this.table = config.table;
         this.Connexion().then((conn) => {
