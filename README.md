@@ -34,6 +34,7 @@ DB_USER_COLLUM=username # Column name for username/email in authentication table
 DB_PASSWORD_COLLUM=password # Column name for password in authentication table
 DB_AOUTH_TABLE
 DB_ITEM_TABLE
+DB_USER_NAME_COLLUM
 ```
 
 ## Usage

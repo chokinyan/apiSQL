@@ -2,7 +2,7 @@ import express from 'express';
 import database from './database';
 import user from './user';
 
-const db = new database({
+const db : database = new database({
     host: process.env.DB_HOST as string,
     port: parseInt(process.env.DB_PORT as string),
     user: process.env.DB_USER as string,
