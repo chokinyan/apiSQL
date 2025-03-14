@@ -24,14 +24,16 @@ npm install
 Create a `.env` file in the root directory of the project and add the following environment variables:
 
 ```
-SQL_HOST=localhost       # Database server hostname
-SQL_USER=username        # Database username
-SQL_PASSWORD=password    # Database password
-SQL_DB=database_name     # Database name
-SQL_PORT=3306            # Database server port (default: 3306 for MySQL)
-SQL_TABLE=users          # Main table name for authentication
-SQL_USER_COLLUMN=username # Column name for username/email in authentication table
-SQL_PASSWORD_COLLUMN=password # Column name for password in authentication table
+DB_HOST=localhost       # Database server hostname
+DB_USER=username        # Database username
+DB_PASSWORD=password    # Database password
+DB_DATABASE=database_name     # Database name
+DB_PORT=3306            # Database server port (default: 3306 for MySQL)
+DB_USER_TABLE=users          # Main table name for authentication
+DB_USER_COLLUM=username # Column name for username/email in authentication table
+DB_PASSWORD_COLLUM=password # Column name for password in authentication table
+DB_AOUTH_TABLE
+DB_ITEM_TABLE
 ```
 
 ## Usage

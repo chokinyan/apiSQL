@@ -22,7 +22,9 @@ const port = 3000;
 
 const connectedUsers : Array<user> = [];
 
-app.post('/Connect', (req, res) => {
+/* API */
+
+app.get('/Connect', (req, res) => {
     if(req.query.user && req.query.password) {
         db.GetUser(req.query.user as string, req.query.password as string).then((data) => {
             res.send(data);
@@ -31,6 +33,9 @@ app.post('/Connect', (req, res) => {
         });
     }
 });
+
+
+
 
 db.on('connect', () => {
     app.listen(port, () => {
