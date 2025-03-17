@@ -107,7 +107,7 @@ app.delete('/Authantication', (req: Request, res: Response) => {
         const token = JSON.parse(req.body);
         if (token.token) {
             db.Deconnexion(token.token).then((data) => {
-                res.send(JSON.stringify(data));
+                res.send(data);
             }).catch((_err) => {
                 res.send("Error");
             });
