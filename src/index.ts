@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import database from './database';
 import user from './user';
 
@@ -38,58 +38,71 @@ const port = 3000;
 const connectedUsers: Array<user> = [];
 
 /* API */
-
-app.post('/Authantication', (req, res) => {
+//@ts-expect-error
+app.post('/Authantication', (req: Request, res: Response) => {
     try {
-        const body = JSON.parse(req.body);
-        switch (body.action) {
-            case "login":
-                if (body && body.user && body.password) {
-                    db.GetUser(body.user, body.password).then((data) => {
-                        res.send(data);
-                    }).catch((_err) => {
-                        res.send("Error");
-                    });
-                }
-                break;
-            case "pin":
-                if (body && body.code) {
-                    db.GetUserByPin(body.code).then((data) => {
-                        res.send(data);
-                    }).catch((_err) => {
-                        res.send("Error");
-                    });
-                }
-                break;
-            case "visage":
-                if(body && body.visage){
-                    db.GetUserByVisage(body.visage).then((data) => {
-                        res.send(data);
-                    }).catch((_err) => {
-                        res.send("Error");
-                    });
-                }
-                break;
-            case "rfid":
-                if(body && body.rfid){
-                    db.GetUserByRfid(body.rfid).then((data) => {
-                        res.send(data);
-                    }).catch((_err) => {
-                        res.send("Error");
-                    });
-                }
-                break;
-            default:
-                res.send("Error");
-                break;
+        if (req.headers['content-type'] !== "application/json" || !req.headers['content-type']) {
+            return res.send("Not JSON");
         }
-
+        req.on('data', (data) => {
+            const body = JSON.parse(data.toString());
+            console.log(body);
+            switch (body.action) {
+                case "login":
+                    if (body && body.user && body.password) {
+                        db.GetUser(body.user, body.password).then((data) => {
+                            res.send(data);
+                        }).catch((_err) => {
+                            res.send("Error");
+                        });
+                    } else {
+                        res.send("Missing user or password");
+                    }
+                    break;
+                case "pin":
+                    if (body && body.code) {
+                        db.GetUserByPin(body.code).then((data) => {
+                            res.send(data);
+                        }).catch((_err) => {
+                            res.send("Error");
+                        });
+                    } else {
+                        res.send("Missing code");
+                    }
+                    break;
+                case "visage":
+                    if (body && body.visage) {
+                        db.GetUserByVisage(body.visage).then((data) => {
+                            res.send(data);
+                        }).catch((_err) => {
+                            res.send("Error");
+                        });
+                    } else {
+                        res.send("Missing visage data");
+                    }
+                    break;
+                case "rfid":
+                    if (body && body.rfid) {
+                        db.GetUserByRfid(body.rfid).then((data) => {
+                            res.send(data);
+                        }).catch((_err) => {
+                            res.send("Error");
+                        });
+                    } else {
+                        res.send("Missing rfid");
+                    }
+                    break;
+                default:
+                    res.send("Error: Invalid action");
+                    break;
+            }
+        });
     } catch (err) {
         res.send("Error");
     }
 });
 
-app.delete('/Authantication', (req, res) => {
+app.delete('/Authantication', (req: Request, res: Response) => {
     try {
         const token = JSON.parse(req.body);
         if (token.token) {

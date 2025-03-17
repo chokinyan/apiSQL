@@ -145,7 +145,6 @@ export default class DB {
                                 reject(err);
                             });
                         }
-                        resolve(success);
                     })
                     .catch((err) => {
                         this.emitEvent('error', { message: 'Query failed', operation: 'GetUser', error: err });
@@ -173,7 +172,6 @@ export default class DB {
                                 reject(err);
                             });
                         }
-                        resolve(success);
                     })
                     .catch((err) => {
                         this.emitEvent('error', { message: 'Query failed', operation: 'GetUser', error: err });
@@ -201,7 +199,6 @@ export default class DB {
                                 reject(err);
                             });
                         }
-                        resolve(success);
                     })
                     .catch((err) => {
                         this.emitEvent('error', { message: 'Query failed', operation: 'GetUser', error: err });
@@ -229,7 +226,6 @@ export default class DB {
                                 reject(err);
                             });
                         }
-                        resolve(success);
                     })
                     .catch((err) => {
                         this.emitEvent('error', { message: 'Query failed', operation: 'GetUser', error: err });
