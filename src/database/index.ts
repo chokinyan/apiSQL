@@ -124,6 +124,27 @@ export default class DB {
         });
     }
 
+    private CreateAuth(userId : string) : Promise<string> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                const token = crypto.getRandomValues(new Uint32Array(16)).join('');
+                this.pollConnexion.query(`INSERT INTO ${this.database}.${this.table.aouthTable} (id_Utilisateur,token) VALUES (?,?)`, [userId,token])
+                    .then((_res) => {
+                        this.emitEvent('query', { type: 'CreateAuth', success: true, userId: userId, connexion: this.pollConnexion });
+                        resolve(token);
+                    })
+                    .catch((err) => {
+                        this.emitEvent('error', { message: 'Query failed', operation: 'CreateAuth', error: err });
+                        reject(err);
+                    });
+            } else {
+                const err = "pas de poll Con";
+                this.emitEvent('error', { message: err, operation: 'CreateAuth' });
+                reject(new Error(err));
+            }
+        });
+    }
+
     public async CloseConnexion(): Promise<void> {
         if (this.pollConnexion) {
             await this.pollConnexion.release();

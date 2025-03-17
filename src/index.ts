@@ -3,7 +3,7 @@ import database from './database';
 import user from './user';
 
 
-const db : database = new database({
+const db: database = new database({
     host: process.env.DB_HOST as string,
     port: parseInt(process.env.DB_PORT as string),
     user: process.env.DB_USER as string,
@@ -22,17 +22,57 @@ const db : database = new database({
 const app = express();
 const port = 3000;
 
-const connectedUsers : Array<user> = [];
+const connectedUsers: Array<user> = [];
 
 /* API */
 
-app.get('/Connect', (req, res) => {
-    if(req.query.user && req.query.password) {
-        db.GetUser(req.query.user as string, req.query.password as string).then((data) => {
-            res.send(data);
-        }).catch((_err) => {
-            res.send("Error");
-        });
+app.post('/Authantication', (req, res) => {
+    try {
+        const body = JSON.parse(req.body);
+        switch (body.action) {
+            case "login":
+                if (body && body.user && body.password) {
+                    db.GetUser(body.user, body.password).then((data) => {
+                        res.send(data);
+                    }).catch((_err) => {
+                        res.send("Error");
+                    });
+                }
+                break;
+            case "pin":
+                if (body && body.user && body.password) {
+                    db.GetUser(body.user, body.password).then((data) => {
+                        res.send(data);
+                    }).catch((_err) => {
+                        res.send("Error");
+                    });
+                }
+                break;
+            case "visage":
+                if (body && body.user && body.password) {
+                    db.GetUser(body.user, body.password).then((data) => {
+                        res.send(data);
+                    }).catch((_err) => {
+                        res.send("Error");
+                    });
+                }
+                break;
+            case "rfid":
+                if (body && body.user && body.password) {
+                    db.GetUser(body.user, body.password).then((data) => {
+                        res.send(data);
+                    }).catch((_err) => {
+                        res.send("Error");
+                    });
+                }
+                break;
+            default:
+                res.send("Error");
+                break;
+        }
+
+    } catch (err) {
+        res.send("Error");
     }
 });
 
