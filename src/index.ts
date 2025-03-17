@@ -9,26 +9,26 @@ const db: database = new database({
     user: process.env.DB_USER as string,
     password: process.env.DB_PASSWORD as string,
     database: process.env.DB_DATABASE as string,
-    userTable : {
-        table : process.env.DB_USER_TABLE as string,
-        id : process.env.DB_USER_ID_COLLUM as string,
-        nom : process.env.DB_USER_NAME_COLLUM as string,
-        prenom : process.env.DB_PASSWORD_COLLUM as string,
-        password : process.env.DB_PASSWORD_COLLUM as string,
-        pin : process.env.DB_PIN_COLLUM as string,
-        rfid : process.env.DB_RFID_COLLUM as string,
-        visage : process.env.DB_VISAGE_COLLUM as string
+    userTable: {
+        table: process.env.DB_USER_TABLE as string,
+        id: process.env.DB_USER_ID_COLLUM as string,
+        nom: process.env.DB_USER_NAME_COLLUM as string,
+        prenom: process.env.DB_PASSWORD_COLLUM as string,
+        password: process.env.DB_PASSWORD_COLLUM as string,
+        pin: process.env.DB_PIN_COLLUM as string,
+        rfid: process.env.DB_RFID_COLLUM as string,
+        visage: process.env.DB_VISAGE_COLLUM as string
     },
-    aouthTable : {
-        table : process.env.DB_AOUTH_TABLE as string,
-        id : process.env.DB_AOUTH_USER_COLLUM as string,
-        token : process.env.DB_AOUTH_COLLUM as string
+    aouthTable: {
+        table: process.env.DB_AOUTH_TABLE as string,
+        id: process.env.DB_AOUTH_USER_COLLUM as string,
+        token: process.env.DB_AOUTH_COLLUM as string
     },
-    itemTable : {
-        table : process.env.DB_ITEM_TABLE as string,
-        id : process.env.DB_ITEM_USER_COLLUM as string,
-        name : process.env.DB_ITEM_NAME_COLLUM as string,
-        expire : process.env.DB_ITEM_EXPIRE_COLLUM as string
+    itemTable: {
+        table: process.env.DB_ITEM_TABLE as string,
+        id: process.env.DB_ITEM_USER_COLLUM as string,
+        name: process.env.DB_ITEM_NAME_COLLUM as string,
+        expire: process.env.DB_ITEM_EXPIRE_COLLUM as string
     }
 });
 
@@ -53,8 +53,12 @@ app.post('/Authantication', (req, res) => {
                 }
                 break;
             case "pin":
-                if(body && body.code){
-
+                if (body && body.code) {
+                    db.GetUserByPin(body.code).then((data) => {
+                        res.send(data);
+                    }).catch((_err) => {
+                        res.send("Error");
+                    });
                 }
                 break;
             case "visage":

@@ -124,22 +124,85 @@ export default class DB {
         });
     }
 
-    public GetUserByPin(pin: string): Promise<boolean | string> {
+    public GetUserByRfid(rfid: string): Promise<boolean | string> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
-                this.pollConnexion.query(`SELECT id FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.pin} = ?`, [pin])
+                this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.rfid} = ?`, [rfid])
                     .then((res) => {
                         const success = res.length === 1;
-                        this.emitEvent('query', { type: 'GetUserByPin', success: success, pin: pin, connexion: this.pollConnexion });
+                        this.emitEvent('query', { type: 'GetUser', success: success, rfid: rfid, connexion: this.pollConnexion });
+                        if (success) {
+                            this.CreateAuth(res[0].id).then((token) => {
+                                resolve(JSON.parse(`{"id":${res[0].id},"token":"${token}",nom:"${res[0].nom}",prenom:"${res[0].prenom}"}`));
+                            }).catch((err) => {
+                                reject(err);
+                            });
+                        }
                         resolve(success);
                     })
                     .catch((err) => {
-                        this.emitEvent('error', { message: 'Query failed', operation: 'GetUserByPin', error: err });
+                        this.emitEvent('error', { message: 'Query failed', operation: 'GetUser', error: err });
                         reject(err);
                     });
             } else {
                 const err = "pas de poll Con";
-                this.emitEvent('error', { message: err, operation: 'GetUserByPin' });
+                this.emitEvent('error', { message: err, operation: 'GetUser' });
+                reject(new Error(err));
+            }
+        });
+    }
+
+    public GetUserByVisage(dataVisage: string): Promise<boolean | string> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.visage} = ?`, [dataVisage])
+                    .then((res) => {
+                        const success = res.length === 1;
+                        this.emitEvent('query', { type: 'GetUser', success: success, DataVisage: dataVisage, connexion: this.pollConnexion });
+                        if (success) {
+                            this.CreateAuth(res[0].id).then((token) => {
+                                resolve(JSON.parse(`{"id":${res[0].id},"token":"${token}",nom:"${res[0].nom}",prenom:"${res[0].prenom}"}`));
+                            }).catch((err) => {
+                                reject(err);
+                            });
+                        }
+                        resolve(success);
+                    })
+                    .catch((err) => {
+                        this.emitEvent('error', { message: 'Query failed', operation: 'GetUser', error: err });
+                        reject(err);
+                    });
+            } else {
+                const err = "pas de poll Con";
+                this.emitEvent('error', { message: err, operation: 'GetUser' });
+                reject(new Error(err));
+            }
+        });
+    }
+
+    public GetUserByPin(pin: string): Promise<boolean | string> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.pin} = ?`, [pin])
+                    .then((res) => {
+                        const success = res.length === 1;
+                        this.emitEvent('query', { type: 'GetUser', success: success, pin: pin, connexion: this.pollConnexion });
+                        if (success) {
+                            this.CreateAuth(res[0].id).then((token) => {
+                                resolve(JSON.parse(`{"id":${res[0].id},"token":"${token}",nom:"${res[0].nom}",prenom:"${res[0].prenom}"}`));
+                            }).catch((err) => {
+                                reject(err);
+                            });
+                        }
+                        resolve(success);
+                    })
+                    .catch((err) => {
+                        this.emitEvent('error', { message: 'Query failed', operation: 'GetUser', error: err });
+                        reject(err);
+                    });
+            } else {
+                const err = "pas de poll Con";
+                this.emitEvent('error', { message: err, operation: 'GetUser' });
                 reject(new Error(err));
             }
         });
