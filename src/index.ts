@@ -51,7 +51,7 @@ app.post('/Authantication', (req: Request, res: Response) => {
                 case "login":
                     if (body && body.user && body.password) {
                         db.GetUser(body.user, body.password).then((data) => {
-                            res.send(data);
+                            res.send(JSON.stringify(data));
                         }).catch((_err) => {
                             res.send("Error");
                         });
@@ -62,7 +62,7 @@ app.post('/Authantication', (req: Request, res: Response) => {
                 case "pin":
                     if (body && body.code) {
                         db.GetUserByPin(body.code).then((data) => {
-                            res.send(data);
+                            res.send(JSON.stringify(data));
                         }).catch((_err) => {
                             res.send("Error");
                         });
@@ -73,7 +73,7 @@ app.post('/Authantication', (req: Request, res: Response) => {
                 case "visage":
                     if (body && body.visage) {
                         db.GetUserByVisage(body.visage).then((data) => {
-                            res.send(data);
+                            res.send(JSON.stringify(data));
                         }).catch((_err) => {
                             res.send("Error");
                         });
@@ -84,7 +84,7 @@ app.post('/Authantication', (req: Request, res: Response) => {
                 case "rfid":
                     if (body && body.rfid) {
                         db.GetUserByRfid(body.rfid).then((data) => {
-                            res.send(data);
+                            res.send(JSON.stringify(data));
                         }).catch((_err) => {
                             res.send("Error");
                         });
@@ -107,7 +107,7 @@ app.delete('/Authantication', (req: Request, res: Response) => {
         const token = JSON.parse(req.body);
         if (token.token) {
             db.Deconnexion(token.token).then((data) => {
-                res.send(data);
+                res.send(JSON.stringify(data));
             }).catch((_err) => {
                 res.send("Error");
             });

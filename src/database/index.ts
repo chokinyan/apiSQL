@@ -140,7 +140,12 @@ export default class DB {
                         this.emitEvent('query', { type: 'GetUser', success: success, rfid: rfid, connexion: this.pollConnexion });
                         if (success) {
                             this.CreateAuth(res[0].id).then((token) => {
-                                resolve(JSON.parse(`{"id":${res[0].id},"token":"${token}",nom:"${res[0].nom}",prenom:"${res[0].prenom}"}`));
+                                resolve({
+                                    id: res[0].id,
+                                    token: token,
+                                    nom: res[0].nom,
+                                    prenom: res[0].prenom
+                                });
                             }).catch((err) => {
                                 reject(err);
                             });
@@ -167,7 +172,12 @@ export default class DB {
                         this.emitEvent('query', { type: 'GetUser', success: success, DataVisage: dataVisage, connexion: this.pollConnexion });
                         if (success) {
                             this.CreateAuth(res[0].id).then((token) => {
-                                resolve(JSON.parse(`{"id":${res[0].id},"token":"${token}",nom:"${res[0].nom}",prenom:"${res[0].prenom}"}`));
+                                resolve({
+                                    id: res[0].id,
+                                    token: token,
+                                    nom: res[0].nom,
+                                    prenom: res[0].prenom
+                                });
                             }).catch((err) => {
                                 reject(err);
                             });
@@ -194,8 +204,14 @@ export default class DB {
                         this.emitEvent('query', { type: 'GetUser', success: success, pin: pin, connexion: this.pollConnexion });
                         if (success) {
                             this.CreateAuth(res[0].id).then((token) => {
-                                resolve(JSON.parse(`{"id":${res[0].id},"token":"${token}",nom:"${res[0].nom}",prenom:"${res[0].prenom}"}`));
+                                resolve({
+                                    id: res[0].id,
+                                    token: token,
+                                    nom: res[0].nom,
+                                    prenom: res[0].prenom
+                                })
                             }).catch((err) => {
+                                console.log(err);
                                 reject(err);
                             });
                         }
@@ -215,13 +231,18 @@ export default class DB {
     public GetUser(prenom: string, password: string): Promise<boolean | DBAuthResponse> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
-                this.pollConnexion.query(`SELECT id,prenom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.prenom} = ? AND ${this.userTable.password} = ?`, [prenom, password])
+                this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.prenom} = ? AND ${this.userTable.password} = ?`, [prenom, password])
                     .then((res) => {
                         const success = res.length === 1;
                         this.emitEvent('query', { type: 'GetUser', success: success, prenom: prenom, password: password, connexion: this.pollConnexion });
                         if (success) {
                             this.CreateAuth(res[0].id).then((token) => {
-                                resolve(JSON.parse(`{"id":${res[0].id},"token":"${token}",nom:"${prenom}",prenom:"${res[0].prenom}"}`));
+                                resolve({
+                                    id: res[0].id,
+                                    token: token,
+                                    nom: res[0].nom,
+                                    prenom: res[0].prenom
+                                });
                             }).catch((err) => {
                                 reject(err);
                             });
