@@ -51,6 +51,13 @@ export interface DBConfig {
     userTable: UserTable;
 }
 
+export interface DBAuthResponse {
+    id: string;
+    token: string;
+    nom: string;
+    prenom: string;
+}
+
 export default class DB {
     private pollConnexion: mariadb.PoolConnection | undefined;
     private listeners: DBEventListener[] = [];
@@ -124,7 +131,7 @@ export default class DB {
         });
     }
 
-    public GetUserByRfid(rfid: string): Promise<boolean | string> {
+    public GetUserByRfid(rfid: string): Promise<boolean | DBAuthResponse> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.rfid} = ?`, [rfid])
@@ -152,7 +159,7 @@ export default class DB {
         });
     }
 
-    public GetUserByVisage(dataVisage: string): Promise<boolean | string> {
+    public GetUserByVisage(dataVisage: string): Promise<boolean | DBAuthResponse> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.visage} = ?`, [dataVisage])
@@ -180,7 +187,7 @@ export default class DB {
         });
     }
 
-    public GetUserByPin(pin: string): Promise<boolean | string> {
+    public GetUserByPin(pin: string): Promise<boolean | DBAuthResponse> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.pin} = ?`, [pin])
@@ -208,7 +215,7 @@ export default class DB {
         });
     }
 
-    public GetUser(prenom: string, password: string): Promise<boolean | string> {
+    public GetUser(prenom: string, password: string): Promise<boolean | DBAuthResponse> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.pollConnexion.query(`SELECT id,prenom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.prenom} = ? AND ${this.userTable.password} = ?`, [prenom, password])

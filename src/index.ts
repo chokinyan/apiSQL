@@ -62,8 +62,22 @@ app.post('/Authantication', (req, res) => {
                 }
                 break;
             case "visage":
+                if(body && body.visage){
+                    db.GetUserByVisage(body.visage).then((data) => {
+                        res.send(data);
+                    }).catch((_err) => {
+                        res.send("Error");
+                    });
+                }
                 break;
             case "rfid":
+                if(body && body.rfid){
+                    db.GetUserByRfid(body.rfid).then((data) => {
+                        res.send(data);
+                    }).catch((_err) => {
+                        res.send("Error");
+                    });
+                }
                 break;
             default:
                 res.send("Error");
