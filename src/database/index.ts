@@ -7,10 +7,37 @@ export interface DBEventListener {
     callback: (data: any) => void;
 }
 
-export interface TableConfig {
-    userTable: string;
-    aouthTable: string;
-    itemTable: string;
+export interface UserTable {
+    /*
+    Configuration de la table utilisateur, les collones doivent être renseignées
+    */
+    id: string;
+    nom: string;
+    prenom: string;
+    password: string;
+    pin: string;
+    rfid: string;
+    visage: string;
+    table: string;
+}
+
+export interface AouthTable {
+    /*
+    Configuration de la table aouth, les collones doivent être renseignées
+    */
+    id: string;
+    token: string;
+    table: string;
+}
+
+export interface ItemTable {
+    /*
+    Configuration de la table item, les collones doivent être renseignées
+    */
+    id: string;
+    name: string;
+    expire: string;
+    table: string;
 }
 
 export interface DBConfig {
@@ -19,10 +46,9 @@ export interface DBConfig {
     user: string;
     password: string;
     database: string;
-    userCollum: string;
-    prenomCollum: string;
-    passwordCollum: string;
-    table: TableConfig;
+    itemTable: ItemTable;
+    aouthTable: AouthTable;
+    userTable: UserTable;
 }
 
 export default class DB {
@@ -33,10 +59,9 @@ export default class DB {
     public user: string;
     public password: string;
     public database: string;
-    public userCollum: string;
-    public prenomCollum: string;
-    public passwordCollum: string;
-    public table: TableConfig;
+    public itemTable: ItemTable;
+    public aouthTable: AouthTable;
+    public userTable: UserTable;
 
     constructor(config: DBConfig) {
         this.host = config.host;
@@ -44,10 +69,9 @@ export default class DB {
         this.user = config.user;
         this.password = config.password;
         this.database = config.database;
-        this.userCollum = config.userCollum;
-        this.prenomCollum = config.prenomCollum;
-        this.passwordCollum = config.passwordCollum;
-        this.table = config.table;
+        this.itemTable = config.itemTable;
+        this.aouthTable = config.aouthTable;
+        this.userTable = config.userTable;
         this.Connexion().then((conn) => {
             this.pollConnexion = (conn as mariadb.PoolConnection);
             this.emitEvent('connect', { success: true, connexion: this.pollConnexion });
@@ -100,16 +124,37 @@ export default class DB {
         });
     }
 
-    public GetUser(user: string, password: string): Promise<boolean | string> {
+    public GetUserByPin(pin: string): Promise<boolean | string> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
-                this.pollConnexion.query(`SELECT id,prenom FROM ${this.database}.${this.table.userTable} WHERE ${this.userCollum} = ? AND ${this.passwordCollum} = ?`, [user, password])
+                this.pollConnexion.query(`SELECT id FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.pin} = ?`, [pin])
                     .then((res) => {
                         const success = res.length === 1;
-                        this.emitEvent('query', { type: 'GetUser', success: success, user: user, password: password, connexion: this.pollConnexion });
+                        this.emitEvent('query', { type: 'GetUserByPin', success: success, pin: pin, connexion: this.pollConnexion });
+                        resolve(success);
+                    })
+                    .catch((err) => {
+                        this.emitEvent('error', { message: 'Query failed', operation: 'GetUserByPin', error: err });
+                        reject(err);
+                    });
+            } else {
+                const err = "pas de poll Con";
+                this.emitEvent('error', { message: err, operation: 'GetUserByPin' });
+                reject(new Error(err));
+            }
+        });
+    }
+
+    public GetUser(prenom: string, password: string): Promise<boolean | string> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.pollConnexion.query(`SELECT id,prenom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.prenom} = ? AND ${this.userTable.password} = ?`, [prenom, password])
+                    .then((res) => {
+                        const success = res.length === 1;
+                        this.emitEvent('query', { type: 'GetUser', success: success, prenom: prenom, password: password, connexion: this.pollConnexion });
                         if (success) {
                             this.CreateAuth(res[0].id).then((token) => {
-                                resolve(JSON.parse(`{"id":${res[0].id},"token":"${token}",nom:"${user}",prenom:"${res[0].prenom}"}`));
+                                resolve(JSON.parse(`{"id":${res[0].id},"token":"${token}",nom:"${prenom}",prenom:"${res[0].prenom}"}`));
                             }).catch((err) => {
                                 reject(err);
                             });
@@ -132,7 +177,7 @@ export default class DB {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 const token = crypto.getRandomValues(new Uint32Array(16)).join('');
-                this.pollConnexion.query(`INSERT INTO ${this.database}.${this.table.aouthTable} (id_Utilisateur,token) VALUES (?,?)`, [userId, token])
+                this.pollConnexion.query(`INSERT INTO ${this.database}.${this.aouthTable.table} (${this.aouthTable.id},${this.aouthTable.token}) VALUES (?,?)`, [userId, token])
                     .then((_res) => {
                         this.emitEvent('query', { type: 'CreateAuth', success: true, userId: userId, connexion: this.pollConnexion });
                         resolve(token);
@@ -152,7 +197,7 @@ export default class DB {
     public Deconnexion(token: string): Promise<boolean> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
-                this.pollConnexion.query(`DELETE FROM ${this.database}.${this.table.aouthTable} WHERE token = ?`, [token])
+                this.pollConnexion.query(`DELETE FROM ${this.database}.${this.aouthTable.table} WHERE ${this.aouthTable.token} = ?`, [token])
                     .then((_res) => {
                         this.emitEvent('query', { type: 'Deconnexion', success: true, token: token, connexion: this.pollConnexion });
                         resolve(true);
