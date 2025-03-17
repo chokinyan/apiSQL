@@ -100,15 +100,19 @@ export default class DB {
         });
     }
 
-    public GetUser(user: string, password: string): Promise<boolean | number> {
+    public GetUser(user: string, password: string): Promise<boolean | string> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
-                this.pollConnexion.query(`SELECT id FROM ${this.database}.${this.table.userTable} WHERE ${this.userCollum} = ? AND ${this.passwordCollum} = ?`, [user, password])
+                this.pollConnexion.query(`SELECT id,prenom FROM ${this.database}.${this.table.userTable} WHERE ${this.userCollum} = ? AND ${this.passwordCollum} = ?`, [user, password])
                     .then((res) => {
                         const success = res.length === 1;
                         this.emitEvent('query', { type: 'GetUser', success: success, user: user, password: password, connexion: this.pollConnexion });
                         if (success) {
-                            resolve(res[0]);
+                            this.CreateAuth(res[0].id).then((token) => {
+                                resolve(JSON.parse(`{"id":${res[0].id},"token":"${token}",nom:"${user}",prenom:"${res[0].prenom}"}`));
+                            }).catch((err) => {
+                                reject(err);
+                            });
                         }
                         resolve(success);
                     })
