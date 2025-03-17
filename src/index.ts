@@ -2,6 +2,7 @@ import express from 'express';
 import database from './database';
 import user from './user';
 
+
 const db : database = new database({
     host: process.env.DB_HOST as string,
     port: parseInt(process.env.DB_PORT as string),
@@ -36,9 +37,12 @@ app.get('/Connect', (req, res) => {
 });
 
 
-
+db.on('error', (data) => {
+    console.error(data);
+});
 
 db.on('connect', () => {
+    console.log("connecter");
     app.listen(port, () => {
         console.log(`Server is running at http://localhost:${port}`);
     });

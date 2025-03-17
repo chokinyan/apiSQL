@@ -8,7 +8,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "npm run build && node dist/index.js",
+    "start": "npm run build && node --env-file=.env dist/index.js ",
     "dev": "tsc --watch & node --watch dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

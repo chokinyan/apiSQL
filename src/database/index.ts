@@ -55,6 +55,15 @@ export default class DB {
             console.error('Database connection failed');
             this.emitEvent('error', { message: 'Connection failed', error: err });
         });
+        process.on('SIGINT', () => {
+            this.OnProgammeClose();
+        });
+        process.on('SIGTERM', () => {
+            this.OnProgammeClose();
+        });
+        process.on('exit', () => {
+            this.OnProgammeClose();
+        });
     }
 
     private Connexion(): Promise<mariadb.PoolConnection | void> {
@@ -98,7 +107,7 @@ export default class DB {
                     .then((res) => {
                         const success = res.length === 1;
                         this.emitEvent('query', { type: 'GetUser', success: success, user: user, password: password, connexion: this.pollConnexion });
-                        if(success) {
+                        if (success) {
                             resolve(res[0]);
                         }
                         resolve(success);
@@ -146,4 +155,12 @@ export default class DB {
     public on(eventType: DBEventType, callback: (data: any) => void): void {
         this.addListener(eventType, callback);
     }
+
+    private OnProgammeClose(): void {
+        this.CloseConnexion().then(() => {
+            process.exit(0);
+        }).catch(() => {
+            process.exit(1);
+        });
+    };
 }
