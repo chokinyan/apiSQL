@@ -78,9 +78,9 @@ app.post('/Authantication', (req, res) => {
 
 app.delete('/Authantication', (req, res) => {
     try {
-        const body = JSON.parse(req.body);
-        if (body && body.user && body.password) {
-            db.GetUser(body.user, body.password).then((data) => {
+        const token = JSON.parse(req.body);
+        if (token.token) {
+            db.Deconnexion(token.token).then((data) => {
                 res.send(data);
             }).catch((_err) => {
                 res.send("Error");

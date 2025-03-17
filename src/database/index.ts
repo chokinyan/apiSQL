@@ -149,6 +149,26 @@ export default class DB {
         });
     }
 
+    public Deconnexion(token: string): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.pollConnexion.query(`DELETE FROM ${this.database}.${this.table.aouthTable} WHERE token = ?`, [token])
+                    .then((_res) => {
+                        this.emitEvent('query', { type: 'Deconnexion', success: true, token: token, connexion: this.pollConnexion });
+                        resolve(true);
+                    })
+                    .catch((err) => {
+                        this.emitEvent('error', { message: 'Query failed', operation: 'Deconnexion', error: err });
+                        reject(err);
+                    });
+            } else {
+                const err = "pas de poll Con";
+                this.emitEvent('error', { message: err, operation: 'Deconnexion' });
+                reject(new Error(err));
+            }
+        });
+    }
+
     public async CloseConnexion(): Promise<void> {
         if (this.pollConnexion) {
             await this.pollConnexion.release();
