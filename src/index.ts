@@ -76,6 +76,21 @@ app.post('/Authantication', (req, res) => {
     }
 });
 
+app.delete('/Authantication', (req, res) => {
+    try {
+        const body = JSON.parse(req.body);
+        if (body && body.user && body.password) {
+            db.GetUser(body.user, body.password).then((data) => {
+                res.send(data);
+            }).catch((_err) => {
+                res.send("Error");
+            });
+        }
+    }
+    catch (err) {
+        res.send("Error");
+    }
+});
 
 db.on('error', (data) => {
     console.error(data);
