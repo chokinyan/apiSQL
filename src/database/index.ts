@@ -52,7 +52,6 @@ export interface DBConfig {
 }
 
 export interface DBAuthResponse {
-    id: string;
     token: string;
     nom: string;
     prenom: string;
@@ -141,7 +140,6 @@ export default class DB {
                         if (success) {
                             this.CreateAuth(res[0].id).then((token) => {
                                 resolve({
-                                    id: res[0].id,
                                     token: token,
                                     nom: res[0].nom,
                                     prenom: res[0].prenom
@@ -149,6 +147,9 @@ export default class DB {
                             }).catch((err) => {
                                 reject(err);
                             });
+                        }
+                        else {
+                            resolve(false);
                         }
                     })
                     .catch((err) => {
@@ -173,7 +174,6 @@ export default class DB {
                         if (success) {
                             this.CreateAuth(res[0].id).then((token) => {
                                 resolve({
-                                    id: res[0].id,
                                     token: token,
                                     nom: res[0].nom,
                                     prenom: res[0].prenom
@@ -181,6 +181,9 @@ export default class DB {
                             }).catch((err) => {
                                 reject(err);
                             });
+                        }
+                        else {
+                            resolve(false);
                         }
                     })
                     .catch((err) => {
@@ -205,7 +208,6 @@ export default class DB {
                         if (success) {
                             this.CreateAuth(res[0].id).then((token) => {
                                 resolve({
-                                    id: res[0].id,
                                     token: token,
                                     nom: res[0].nom,
                                     prenom: res[0].prenom
@@ -214,6 +216,9 @@ export default class DB {
                                 console.log(err);
                                 reject(err);
                             });
+                        }
+                        else {
+                            resolve(false);
                         }
                     })
                     .catch((err) => {
@@ -238,7 +243,6 @@ export default class DB {
                         if (success) {
                             this.CreateAuth(res[0].id).then((token) => {
                                 resolve({
-                                    id: res[0].id,
                                     token: token,
                                     nom: res[0].nom,
                                     prenom: res[0].prenom
@@ -246,6 +250,9 @@ export default class DB {
                             }).catch((err) => {
                                 reject(err);
                             });
+                        }
+                        else {
+                            resolve(false);
                         }
                     })
                     .catch((err) => {
@@ -263,7 +270,7 @@ export default class DB {
     private CreateAuth(userId: string): Promise<string> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
-                const token = crypto.getRandomValues(new Uint32Array(16)).join('');
+                const token = crypto.getRandomValues(new BigUint64Array()).join('');
                 this.pollConnexion.query(`INSERT INTO ${this.database}.${this.aouthTable.table} (${this.aouthTable.id},${this.aouthTable.token}) VALUES (?,?)`, [userId, token])
                     .then((_res) => {
                         this.emitEvent('query', { type: 'CreateAuth', success: true, userId: userId, connexion: this.pollConnexion });

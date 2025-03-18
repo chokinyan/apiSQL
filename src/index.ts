@@ -103,19 +103,22 @@ app.post('/Authantication', (req: Request, res: Response) => {
 });
 
 app.delete('/Authantication', (req: Request, res: Response) => {
-    try {
-        const token = JSON.parse(req.body);
-        if (token.token) {
-            db.Deconnexion(token.token).then((data) => {
-                res.send(data);
-            }).catch((_err) => {
-                res.send("Error");
-            });
+    req.on('data', (data) => {
+        try {
+            const body = JSON.parse(data.toString());
+            if (body && body.token) {
+                db.Deconnexion(body.token).then((data) => {
+                    res.status(200).send(data);
+                }).catch((_err) => {
+                    res.status(200).send("Error");
+                });
+            } else {
+                res.status(200).send("Missing token");
+            }
+        } catch (err) {
+            res.status(200).send("Error");
         }
-    }
-    catch (err) {
-        res.send("Error");
-    }
+    });
 });
 
 db.on('error', (data) => {

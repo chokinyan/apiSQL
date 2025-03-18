@@ -7,10 +7,10 @@ export default class User {
     //@ts-expect-error
     public prenom: string;
     private database : DB;
-    private idUser : number;
+    private token : string;
 
-    constructor(database : DB,id : number) {
-        this.idUser = id;
+    constructor(database : DB,token : string) {
+        this.token = token;
         this.database = database;
     }
 
