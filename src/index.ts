@@ -39,14 +39,16 @@ const port = 3000;
 app.post('/Authentification', (req: Request, res: Response) => {
     try {
         if (req.headers['content-type'] !== "application/json" || !req.headers['content-type']) {
-            res.send("Not JSON");
+            res.status(200).send("Not JSON");
+            return;
         }
         req.on('data', (data) => {
             try{
                 JSON.parse(data.toString());
             }
             catch(err){
-                res.send("Error");
+                res.status(200).send("Error");
+                return;
             }
             const body = JSON.parse(data.toString());
             console.log(body);
@@ -54,54 +56,54 @@ app.post('/Authentification', (req: Request, res: Response) => {
                 case "login":
                     if (body && body.user && body.password) {
                         db.GetUser(body.user, body.password).then((data) => {
-                            res.send(JSON.stringify(data));
+                            res.status(200).send(JSON.stringify(data));
                         }).catch((_err) => {
-                            res.send("Error");
+                            res.status(200).send("Error");
                         });
                     } else {
-                        res.send("Missing user or password");
+                        res.status(200).send("Missing user or password");
                     }
                     break;
                 case "pin":
                     if (body && body.code) {
                         db.GetUserByPin(body.code).then((data) => {
-                            res.send(JSON.stringify(data));
+                            res.status(200).send(JSON.stringify(data));
                         }).catch((_err) => {
-                            res.send("Error");
+                            res.status(200).send("Error");
                         });
                     } else {
-                        res.send("Missing code");
+                        res.status(200).send("Missing code");
                     }
                     break;
                 case "visage":
                     if (body && body.visage) {
                         db.GetUserByVisage(body.visage).then((data) => {
-                            res.send(JSON.stringify(data));
+                            res.status(200).send(JSON.stringify(data));
                         }).catch((_err) => {
-                            res.send("Error");
+                            res.status(200).send("Error");
                         });
                     } else {
-                        res.send("Missing visage data");
+                        res.status(200).send("Missing visage data");
                     }
                     break;
                 case "rfid":
                     if (body && body.rfid) {
                         db.GetUserByRfid(body.rfid).then((data) => {
-                            res.send(JSON.stringify(data));
+                            res.status(200).send(JSON.stringify(data));
                         }).catch((_err) => {
-                            res.send("Error");
+                            res.status(200).send("Error");
                         });
                     } else {
-                        res.send("Missing rfid");
+                        res.status(200).send("Missing rfid");
                     }
                     break;
                 default:
-                    res.send("Error: Invalid action");
+                    res.status(200).send("Error: Invalid action");
                     break;
             }
         });
     } catch (err) {
-        res.send("Error");
+        res.status(200).send("Error");
     }
 });
 
@@ -128,12 +130,12 @@ app.get('/Item', (req: Request, res: Response) => {
     const params = req.query;
     if (params && params.token) {
         db.GetItemByUser(params.token as string).then((data) => {
-            res.send(JSON.stringify(data));
+            res.status(200).send(JSON.stringify(data));
         }).catch((_err) => {
-            res.send("Error");
+            res.status(200).send("Error");
         });
     } else {
-        res.send("Missing token");
+        res.status(200).send("Missing token");
     }
     
 });
