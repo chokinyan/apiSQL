@@ -341,7 +341,7 @@ export default class DB {
     private CreateAuth(userId: string): Promise<string> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
-                const token = crypto.getRandomValues(new BigUint64Array(32)).join('');
+                const token = crypto.getRandomValues(new BigUint64Array(16)).join('');
                 this.pollConnexion.query(`INSERT INTO ${this.database}.${this.aouthTable.table} (${this.aouthTable.id},${this.aouthTable.token}) VALUES (?,?)`, [userId, token])
                     .then((_res) => {
                         this.emitEvent('query', { type: 'CreateAuth', success: true, userId: userId, connexion: this.pollConnexion });
