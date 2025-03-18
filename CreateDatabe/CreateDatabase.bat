@@ -7,7 +7,7 @@ echo Creating database from colloc.sql...
 :: Default parameters - customize these as needed
 set /P DB_HOST="Enter the database host [localhost]: " || set DB_HOST=localhost
 set /P DB_USER="Enter the database user [root]: " || set DB_USER=root
-set /P DB_PASSWORD="Enter the database password []: " || set DB_PASSWORD=password
+set /P DB_PASSWORD="Enter the database password []: " || set DB_PASSWORD=
 set SQL_FILE=%~dp0colloc.sql
 
 :: Check if SQL file exists
