@@ -36,7 +36,7 @@ const app = express();
 const port = 3000;
 
 /* API */
-app.post('/Authantication', (req: Request, res: Response) => {
+app.post('/Authentication', (req: Request, res: Response) => {
     try {
         if (req.headers['content-type'] !== "application/json" || !req.headers['content-type']) {
             res.send("Not JSON");
@@ -99,7 +99,7 @@ app.post('/Authantication', (req: Request, res: Response) => {
     }
 });
 
-app.delete('/Authantication', (req: Request, res: Response) => {
+app.delete('/Authentication', (req: Request, res: Response) => {
     req.on('data', (data) => {
         try {
             const body = JSON.parse(data.toString());
