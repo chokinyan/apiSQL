@@ -1,6 +1,5 @@
 import express, { Request, Response } from 'express';
 import database from './database';
-import user from './user';
 
 
 const db: database = new database({
@@ -35,14 +34,11 @@ const db: database = new database({
 const app = express();
 const port = 3000;
 
-const connectedUsers: Array<user> = [];
-
 /* API */
-//@ts-expect-error
 app.post('/Authantication', (req: Request, res: Response) => {
     try {
         if (req.headers['content-type'] !== "application/json" || !req.headers['content-type']) {
-            return res.send("Not JSON");
+            res.send("Not JSON");
         }
         req.on('data', (data) => {
             const body = JSON.parse(data.toString());
