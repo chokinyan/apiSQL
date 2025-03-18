@@ -137,7 +137,7 @@ export default class DB {
         });
     }
 
-    public GetItemByUser(token: string): Promise<boolean | any> {
+    public GetItemByUser(token: string): Promise<Array<UserItem>> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.pollConnexion.query(`SELECT ${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container} FROM ${this.database}.${this.itemTable.table} INNER JOIN ${this.aouthTable.table} ON ${this.itemTable.id}=${this.aouthTable.id} WHERE ${this.aouthTable.token} = ? `, [token])

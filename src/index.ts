@@ -36,12 +36,18 @@ const app = express();
 const port = 3000;
 
 /* API */
-app.post('/Authentication', (req: Request, res: Response) => {
+app.post('/Authentification', (req: Request, res: Response) => {
     try {
         if (req.headers['content-type'] !== "application/json" || !req.headers['content-type']) {
             res.send("Not JSON");
         }
         req.on('data', (data) => {
+            try{
+                JSON.parse(data.toString());
+            }
+            catch(err){
+                res.send("Error");
+            }
             const body = JSON.parse(data.toString());
             console.log(body);
             switch (body.action) {
@@ -99,7 +105,7 @@ app.post('/Authentication', (req: Request, res: Response) => {
     }
 });
 
-app.delete('/Authentication', (req: Request, res: Response) => {
+app.delete('/Authentification', (req: Request, res: Response) => {
     req.on('data', (data) => {
         try {
             const body = JSON.parse(data.toString());
@@ -119,7 +125,16 @@ app.delete('/Authentication', (req: Request, res: Response) => {
 });
 
 app.get('/Item', (req: Request, res: Response) => {
-    const parms = req.query;
+    const params = req.query;
+    if (params && params.token) {
+        db.GetItemByUser(params.token as string).then((data) => {
+            res.send(JSON.stringify(data));
+        }).catch((_err) => {
+            res.send("Error");
+        });
+    } else {
+        res.send("Missing token");
+    }
     
 });
 
