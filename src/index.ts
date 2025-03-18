@@ -1,6 +1,14 @@
 import express, { Request, Response } from 'express';
 import database from './database';
+import mqtt from 'mqtt';
+import readLine from 'readline';
 
+
+let finCourseConnected : boolean = false;
+let etatPorteConnected : boolean = false;
+
+let etatPorte : string = "0";
+let finCourse : string = "0";
 
 const db: database = new database({
     host: process.env.DB_HOST as string,
@@ -32,6 +40,12 @@ const db: database = new database({
     }
 });
 
+const mqttClient = mqtt.connect(process.env.MQTT_HOST as string, {
+    port: process.env.MQTT_PORT as unknown as number,
+    username: process.env.MQTT_USER as string,
+    password: process.env.MQTT_PASSWORD as string,
+});
+
 const app = express();
 const port = 3001;
 
@@ -43,10 +57,10 @@ app.post('/Authentification', (req: Request, res: Response) => {
             return;
         }
         req.on('data', (data) => {
-            try{
+            try {
                 JSON.parse(data.toString());
             }
-            catch(err){
+            catch (err) {
                 res.status(200).send("Error");
                 return;
             }
@@ -136,16 +150,98 @@ app.get('/Item', (req: Request, res: Response) => {
     } else {
         res.status(200).send("Missing token");
     }
-    
+
 });
 
+app.post('/EtatPorte', (req: Request, res: Response) => {
+    try {
+        if (req.headers['content-type'] !== "application/json" || !req.headers['content-type']) {
+            res.status(200).send("Not JSON");
+            return;
+        }
+        req.on('data', (data) => {
+            try {
+                JSON.parse(data.toString());
+            }
+            catch (err) {
+                res.status(200).send("Error");
+                return;
+            }
+            const body = JSON.parse(data.toString());
+            if (body && body.etat && etatPorteConnected) {
+                mqttClient.publish(process.env.MQTT_TOPIC_ETAT_LOCK as string, body.etat);
+                res.status(200).send("OK");
+            } else {
+                res.status(200).send("Missing etat");
+            }
+        });
+    }
+    catch (err) {
+        res.status(200).send("Error");
+    }
+});
+
+app.get('/EtatPorte', (_req: Request, res: Response) => {
+    if(!etatPorteConnected){
+        res.status(200).send("Error: MQTT not connected");
+        return;
+    }
+    res.status(200).send({ etat: etatPorte });
+});
+
+app.get('/FinCourse', (_req: Request, res: Response) => {
+    if(!finCourseConnected){
+        res.status(200).send("Error: MQTT not connected");
+        return;
+    }
+    res.status(200).send({ etat: finCourse });
+});
+
+
+/* Database */
 db.on('error', (data) => {
     console.error(data);
 });
 
+/* MQTT */
+
+mqttClient.on('message',(topic, payload, packet) => {
+    switch (topic) {
+        case process.env.MQTT_TOPIC_ETAT_LOCK:
+            etatPorte = payload.toString() == "1" ? "1" : "0";
+            break;
+        case process.env.MQTT_TOPIC_FIN_COURSE:
+            finCourse = payload.toString() == "1" ? "1" : "0";
+            break;
+        default:
+            console.log("Error: Invalid topic");
+            break;
+    }
+});
+
+/* Start */
 db.on('connect', () => {
-    console.log("connecter");
-    app.listen(port, () => {
-        console.log(`Server is running at http://localhost:${port}`);
+    console.log("Database connecter");
+    mqttClient.on('connect', () => {
+        console.log("mqtt connecter");
+        app.listen(port, () => {
+            console.log(`Server is running at http://localhost:${port}`);
+            mqttClient.subscribe(process.env.MQTT_TOPIC_ETAT_LOCK as string, (err, _grant, _packet) => {
+                if (err) {
+                    console.error(err);
+                    return;
+                }
+                console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_ETAT_LOCK);
+                etatPorteConnected = true;
+            });
+            mqttClient.subscribe(process.env.MQTT_TOPIC_FIN_COURSE as string, (err, _grant, _packet) => {
+                if (err) {
+                    console.error(err);
+                    return;
+                }
+                console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_FIN_COURSE);
+                finCourseConnected = true;
+            });
+        });
     });
 });
