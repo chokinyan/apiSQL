@@ -37,7 +37,7 @@ export interface ItemTable {
     id: string;
     name: string;
     expire: string;
-    container : string;
+    container: string;
     table: string;
 }
 
@@ -56,6 +56,12 @@ export interface DBAuthResponse {
     token: string;
     nom: string;
     prenom: string;
+}
+
+export interface UserItem{
+    name: string;
+    expire: string;
+    container: string;
 }
 
 export default class DB {
@@ -146,6 +152,50 @@ export default class DB {
             } else {
                 const err = "pas de poll Con";
                 this.emitEvent('error', { message: err, operation: 'GetItemByUser' });
+                reject(new Error(err));
+            }
+        });
+    }
+
+    public PutItemBtUser(token: string,item : UserItem): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.GetUserIdByToken(token).then((userId) => {
+                    (this.pollConnexion as mariadb.PoolConnection).query(`INSERT INTO ${this.database}.${this.itemTable.table} (${this.itemTable.id},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container}) VALUES (?,?,?,?)`, [userId, item.name , item.expire, item.container])
+                        .then((_res) => {
+                            this.emitEvent('query', { type: 'PutItemBtUser', success: true, token: token, connexion: this.pollConnexion });
+                            resolve(true);
+                        })
+                        .catch((err) => {
+                            this.emitEvent('error', { message: 'Query failed', operation: 'PutItemBtUser', error: err });
+                            reject(err);
+                        });
+                });
+            } else {
+                const err = "pas de poll Con";
+                this.emitEvent('error', { message: err, operation: 'PutItemBtUser' });
+                reject(new Error(err));
+            }
+        });
+    }
+
+    private GetUserIdByToken(token: string): Promise<string> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.pollConnexion.query(`SELECT ${this.aouthTable.id} FROM ${this.database}.${this.aouthTable.table} WHERE ${this.aouthTable.token} = ?`, [token])
+                    .then((res) => {
+                        if (res.length === 1) {
+                            resolve(res[0].id);
+                        } else {
+                            reject(new Error('Token not found'));
+                        }
+                    })
+                    .catch((err) => {
+                        reject(err);
+                    });
+            } else {
+                const err = "pas de poll Con";
+                this.emitEvent('error', { message: err, operation: 'GetUserIdByToken' });
                 reject(new Error(err));
             }
         });
