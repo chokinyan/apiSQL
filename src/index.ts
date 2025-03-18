@@ -117,6 +117,10 @@ app.delete('/Authantication', (req: Request, res: Response) => {
     });
 });
 
+app.get('/Item', (req: Request, res: Response) => {
+    console.log(req.headers);
+});
+
 db.on('error', (data) => {
     console.error(data);
 });

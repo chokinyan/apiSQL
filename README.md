@@ -10,7 +10,7 @@ apiSQL provides a simple interface to interact with SQL databases through HTTP r
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/apiSQL.git
+git clone https://github.com/chokinyan/apiSQL.git
 
 # Enter the project directory
 cd apiSQL
