@@ -12,7 +12,7 @@ const db: database = new database({
         table: process.env.DB_USER_TABLE as string,
         id: process.env.DB_USER_ID_COLLUM as string,
         nom: process.env.DB_USER_NAME_COLLUM as string,
-        prenom: process.env.DB_PASSWORD_COLLUM as string,
+        prenom: process.env.DB_USER_COLLUM as string,
         password: process.env.DB_PASSWORD_COLLUM as string,
         pin: process.env.DB_PIN_COLLUM as string,
         rfid: process.env.DB_RFID_COLLUM as string,
@@ -33,7 +33,7 @@ const db: database = new database({
 });
 
 const app = express();
-const port = 3000;
+const port = 3001;
 
 /* API */
 app.post('/Authentification', (req: Request, res: Response) => {
@@ -51,7 +51,6 @@ app.post('/Authentification', (req: Request, res: Response) => {
                 return;
             }
             const body = JSON.parse(data.toString());
-            console.log(body);
             switch (body.action) {
                 case "login":
                     if (body && body.user && body.password) {
