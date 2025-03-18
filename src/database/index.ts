@@ -37,6 +37,7 @@ export interface ItemTable {
     id: string;
     name: string;
     expire: string;
+    container : string;
     table: string;
 }
 
@@ -127,6 +128,26 @@ export default class DB {
         }).catch((err) => {
             console.error('Database connection failed');
             this.emitEvent('error', { message: 'Connection close failed during reconnect', error: err });
+        });
+    }
+
+    public GetItemByUser(token: string): Promise<boolean | any> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.pollConnexion.query(`SELECT ${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container} FROM ${this.database}.${this.itemTable.table} INNER JOIN ${this.aouthTable.table} ON ${this.itemTable.id}=${this.aouthTable.id} WHERE ${this.aouthTable.token} = ? `, [token])
+                    .then((res) => {
+                        this.emitEvent('query', { type: 'GetItemByUser', success: true, token: token, connexion: this.pollConnexion });
+                        resolve(res);
+                    })
+                    .catch((err) => {
+                        this.emitEvent('error', { message: 'Query failed', operation: 'GetItemByUser', error: err });
+                        reject(err);
+                    });
+            } else {
+                const err = "pas de poll Con";
+                this.emitEvent('error', { message: err, operation: 'GetItemByUser' });
+                reject(new Error(err));
+            }
         });
     }
 

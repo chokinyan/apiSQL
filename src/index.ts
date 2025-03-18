@@ -27,6 +27,7 @@ const db: database = new database({
         table: process.env.DB_ITEM_TABLE as string,
         id: process.env.DB_ITEM_USER_COLLUM as string,
         name: process.env.DB_ITEM_NAME_COLLUM as string,
+        container: process.env.DB_ITEM_CONTAINER_COLLUM as string,
         expire: process.env.DB_ITEM_EXPIRE_COLLUM as string
     }
 });
@@ -118,7 +119,8 @@ app.delete('/Authantication', (req: Request, res: Response) => {
 });
 
 app.get('/Item', (req: Request, res: Response) => {
-    console.log(req.headers);
+    const parms = req.query;
+    
 });
 
 db.on('error', (data) => {
