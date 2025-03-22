@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `prenom` varchar(255) NOT NULL DEFAULT '',
   `nom` varchar(255) NOT NULL DEFAULT '',
   `password` varchar(50) NOT NULL DEFAULT '',
-  `codePin` varchar(50) NOT NULL,
+  `codePin` varchar(4) NOT NULL,
   `DataVisage` varchar(50) NOT NULL,
   `Rfid` varchar(50) NOT NULL,
   PRIMARY KEY (`id`)

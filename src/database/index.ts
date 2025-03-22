@@ -75,6 +75,7 @@ export default class DB {
     public itemTable: ItemTable;
     public aouthTable: AouthTable;
     public userTable: UserTable;
+    private isConnect: boolean = false;
 
     constructor(config: DBConfig) {
         this.host = config.host;
@@ -106,6 +107,7 @@ export default class DB {
     private Connexion(): Promise<mariadb.PoolConnection | void> {
         return new Promise((resolve, reject) => {
             try {
+                this.isConnect = true;
                 resolve(mariadb.createPool({
                     host: this.host,
                     port: this.port,
@@ -382,6 +384,8 @@ export default class DB {
     public async CloseConnexion(): Promise<void> {
         if (this.pollConnexion) {
             await this.pollConnexion.release();
+            this.isConnect = false;
+            this.pollConnexion = undefined;
             this.emitEvent('disconnect', { success: true });
         }
     }
@@ -418,4 +422,8 @@ export default class DB {
             process.exit(1);
         });
     };
+
+    public IsConnect(): boolean {
+        return this.isConnect;
+    }
 }

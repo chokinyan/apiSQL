@@ -1,8 +1,6 @@
 import express, { Request, Response } from 'express';
 import database from './database';
 import mqtt from 'mqtt';
-import readLine from 'readline';
-
 
 let finCourseConnected : boolean = false;
 let etatPorteConnected : boolean = false;
@@ -50,7 +48,31 @@ const app = express();
 const port = 3001;
 
 /* API */
-app.post('/Authentification', (req: Request, res: Response) => {
+
+app.get('/Item', (req: Request, res: Response) => {
+    const params = req.query;
+    if (params && params.token) {
+        db.GetItemByUser(params.token as string).then((data) => {
+            res.status(200).send(JSON.stringify(data));
+        }).catch((_err) => {
+            res.status(200).send("Error");
+        });
+    } else {
+        res.status(200).send("Missing token");
+    }
+
+});
+
+app.get('/FinCourse', (_req: Request, res: Response) => {
+    if(!finCourseConnected){
+        res.status(200).send("Error: MQTT not connected");
+        return;
+    }
+    res.status(200).send({ etat: finCourse });
+});
+
+app.route('/Authentification')
+.post((req: Request, res: Response) => {
     try {
         if (req.headers['content-type'] !== "application/json" || !req.headers['content-type']) {
             res.status(200).send("Not JSON");
@@ -115,12 +137,12 @@ app.post('/Authentification', (req: Request, res: Response) => {
                     break;
             }
         });
-    } catch (err) {
+    }
+    catch (err) {
         res.status(200).send("Error");
     }
-});
-
-app.delete('/Authentification', (req: Request, res: Response) => {
+})
+.delete((req: Request, res: Response) => {
     req.on('data', (data) => {
         try {
             const body = JSON.parse(data.toString());
@@ -139,21 +161,8 @@ app.delete('/Authentification', (req: Request, res: Response) => {
     });
 });
 
-app.get('/Item', (req: Request, res: Response) => {
-    const params = req.query;
-    if (params && params.token) {
-        db.GetItemByUser(params.token as string).then((data) => {
-            res.status(200).send(JSON.stringify(data));
-        }).catch((_err) => {
-            res.status(200).send("Error");
-        });
-    } else {
-        res.status(200).send("Missing token");
-    }
-
-});
-
-app.post('/EtatPorte', (req: Request, res: Response) => {
+app.route('/EtatPorte')
+.post((req: Request, res: Response) => {
     try {
         if (req.headers['content-type'] !== "application/json" || !req.headers['content-type']) {
             res.status(200).send("Not JSON");
@@ -179,24 +188,14 @@ app.post('/EtatPorte', (req: Request, res: Response) => {
     catch (err) {
         res.status(200).send("Error");
     }
-});
-
-app.get('/EtatPorte', (_req: Request, res: Response) => {
+})
+.get((_req: Request, res: Response) => {
     if(!etatPorteConnected){
         res.status(200).send("Error: MQTT not connected");
         return;
     }
     res.status(200).send({ etat: etatPorte });
 });
-
-app.get('/FinCourse', (_req: Request, res: Response) => {
-    if(!finCourseConnected){
-        res.status(200).send("Error: MQTT not connected");
-        return;
-    }
-    res.status(200).send({ etat: finCourse });
-});
-
 
 /* Database */
 db.on('error', (data) => {
@@ -220,28 +219,28 @@ mqttClient.on('message',(topic, payload, packet) => {
 });
 
 /* Start */
-db.on('connect', () => {
-    console.log("Database connecter");
-    mqttClient.on('connect', () => {
-        console.log("mqtt connecter");
-        app.listen(port, () => {
-            console.log(`Server is running at http://localhost:${port}`);
-            mqttClient.subscribe(process.env.MQTT_TOPIC_ETAT_LOCK as string, (err, _grant, _packet) => {
-                if (err) {
-                    console.error(err);
-                    return;
-                }
-                console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_ETAT_LOCK);
-                etatPorteConnected = true;
-            });
-            mqttClient.subscribe(process.env.MQTT_TOPIC_FIN_COURSE as string, (err, _grant, _packet) => {
-                if (err) {
-                    console.error(err);
-                    return;
-                }
-                console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_FIN_COURSE);
-                finCourseConnected = true;
-            });
-        });
+while(!db.IsConnect() && !mqttClient.connected){
+    console.log("Waiting for connection");
+}
+
+app.listen(port, () => {
+    console.log(app._router);
+    console.log(`Database is running at ${process.env.DB_HOST}:${process.env.DB_PORT}`);
+    console.log(`Server is running at http://localhost:${port}`);
+    mqttClient.subscribe(process.env.MQTT_TOPIC_ETAT_LOCK as string, (err, _grant, _packet) => {
+        if (err) {
+            console.error(err);
+            return;
+        }
+        console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_ETAT_LOCK);
+        etatPorteConnected = true;
+    });
+    mqttClient.subscribe(process.env.MQTT_TOPIC_FIN_COURSE as string, (err, _grant, _packet) => {
+        if (err) {
+            console.error(err);
+            return;
+        }
+        console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_FIN_COURSE);
+        finCourseConnected = true;
     });
 });
