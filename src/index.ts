@@ -1,4 +1,8 @@
 import express, { Request, Response } from 'express';
+import http from 'http';
+import https from 'https';
+import fs from 'fs';
+import path from 'path';
 import database from './database';
 import mqtt from 'mqtt';
 
@@ -45,8 +49,12 @@ const mqttClient = mqtt.connect(process.env.MQTT_HOST as string, {
 });
 
 const app = express();
-const port = 3001;
-
+const portHttps = 3001;
+const portHttp = 3000;
+const option = {
+    key: fs.readFileSync(path.join(__dirname, '../certificat/localhost.key')),
+    cert: fs.readFileSync(path.join(__dirname, '../certificat/localhost.crt')),
+};
 /* API */
 
 app.get('/Item', (req: Request, res: Response) => {
@@ -223,24 +231,32 @@ while(!db.IsConnect() && !mqttClient.connected){
     console.log("Waiting for connection");
 }
 
-app.listen(port, () => {
+http.createServer(app).listen(portHttp, () => {
     console.log(app._router);
     console.log(`Database is running at ${process.env.DB_HOST}:${process.env.DB_PORT}`);
-    console.log(`Server is running at http://localhost:${port}`);
-    mqttClient.subscribe(process.env.MQTT_TOPIC_ETAT_LOCK as string, (err, _grant, _packet) => {
-        if (err) {
-            console.error(err);
-            return;
-        }
-        console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_ETAT_LOCK);
-        etatPorteConnected = true;
-    });
-    mqttClient.subscribe(process.env.MQTT_TOPIC_FIN_COURSE as string, (err, _grant, _packet) => {
-        if (err) {
-            console.error(err);
-            return;
-        }
-        console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_FIN_COURSE);
-        finCourseConnected = true;
-    });
+    console.log(`Server is running at http://localhost:${portHttp}`);
+});
+
+https.createServer(option, app).listen(portHttps, () => {
+    console.log(app._router);
+    console.log(`Database is running at ${process.env.DB_HOST}:${process.env.DB_PORT}`);
+    console.log(`Server is running at https://localhost:${portHttps}`);
+});
+
+
+mqttClient.subscribe(process.env.MQTT_TOPIC_ETAT_LOCK as string, (err, _grant, _packet) => {
+    if (err) {
+        console.error(err);
+        return;
+    }
+    console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_ETAT_LOCK);
+    etatPorteConnected = true;
+});
+mqttClient.subscribe(process.env.MQTT_TOPIC_FIN_COURSE as string, (err, _grant, _packet) => {
+    if (err) {
+        console.error(err);
+        return;
+    }
+    console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_FIN_COURSE);
+    finCourseConnected = true;
 });
