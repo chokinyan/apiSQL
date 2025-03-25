@@ -51,7 +51,7 @@ const mqttClient = mqtt.connect(process.env.MQTT_HOST as string, {
 const app = express();
 const portHttps = 3001;
 const portHttp = 3000;
-const option = {
+const option : https.ServerOptions = {
     key: fs.readFileSync(path.join(__dirname, '../certificat/localhost.key')),
     cert: fs.readFileSync(path.join(__dirname, '../certificat/localhost.crt')),
 };
@@ -212,7 +212,7 @@ db.on('error', (data) => {
 
 /* MQTT */
 
-mqttClient.on('message',(topic, payload, packet) => {
+mqttClient.on('message',(topic, payload, _packet) => {
     switch (topic) {
         case process.env.MQTT_TOPIC_ETAT_LOCK:
             etatPorte = payload.toString() == "1" ? "1" : "0";
@@ -230,19 +230,15 @@ mqttClient.on('message',(topic, payload, packet) => {
 while(!db.IsConnect() && !mqttClient.connected){
     console.log("Waiting for connection");
 }
+console.log(`Database is running at ${process.env.DB_HOST}:${process.env.DB_PORT}`);
 
 http.createServer(app).listen(portHttp, () => {
-    console.log(app._router);
-    console.log(`Database is running at ${process.env.DB_HOST}:${process.env.DB_PORT}`);
     console.log(`Server is running at http://localhost:${portHttp}`);
 });
 
 https.createServer(option, app).listen(portHttps, () => {
-    console.log(app._router);
-    console.log(`Database is running at ${process.env.DB_HOST}:${process.env.DB_PORT}`);
     console.log(`Server is running at https://localhost:${portHttps}`);
 });
-
 
 mqttClient.subscribe(process.env.MQTT_TOPIC_ETAT_LOCK as string, (err, _grant, _packet) => {
     if (err) {
