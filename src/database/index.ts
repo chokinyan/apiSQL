@@ -159,14 +159,14 @@ export default class DB {
         });
     }
 
-    public PutItemBtUser(token: string,item : UserItem): Promise<boolean> {
+    public PutItemBtUser(token: string,item : UserItem): Promise<string> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.GetUserIdByToken(token).then((userId) => {
                     (this.pollConnexion as mariadb.PoolConnection).query(`INSERT INTO ${this.database}.${this.itemTable.table} (${this.itemTable.id},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container}) VALUES (?,?,?,?)`, [userId, item.name , item.expire, item.container])
                         .then((_res) => {
                             this.emitEvent('query', { type: 'PutItemBtUser', success: true, token: token, connexion: this.pollConnexion });
-                            resolve(true);
+                            resolve(JSON.stringify({ success: true }));
                         })
                         .catch((err) => {
                             this.emitEvent('error', { message: 'Query failed', operation: 'PutItemBtUser', error: err });
@@ -203,7 +203,7 @@ export default class DB {
         });
     }
 
-    public GetUserByRfid(rfid: string): Promise<boolean | DBAuthResponse> {
+    public GetUserByRfid(rfid: string): Promise<string | DBAuthResponse> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.rfid} = ?`, [rfid])
@@ -222,7 +222,7 @@ export default class DB {
                             });
                         }
                         else {
-                            resolve(false);
+                            resolve(JSON.stringify({ success: false }));
                         }
                     })
                     .catch((err) => {
@@ -237,7 +237,7 @@ export default class DB {
         });
     }
 
-    public GetUserByVisage(dataVisage: string): Promise<boolean | DBAuthResponse> {
+    public GetUserByVisage(dataVisage: string): Promise<string | DBAuthResponse> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.visage} = ?`, [dataVisage])
@@ -256,7 +256,7 @@ export default class DB {
                             });
                         }
                         else {
-                            resolve(false);
+                            resolve(JSON.stringify({ success: false }));
                         }
                     })
                     .catch((err) => {
@@ -271,7 +271,7 @@ export default class DB {
         });
     }
 
-    public GetUserByPin(pin: string): Promise<boolean | DBAuthResponse> {
+    public GetUserByPin(pin: string): Promise<string | DBAuthResponse> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.pin} = ?`, [pin])
@@ -291,7 +291,7 @@ export default class DB {
                             });
                         }
                         else {
-                            resolve(false);
+                            resolve(JSON.stringify({ success: false }));
                         }
                     })
                     .catch((err) => {
@@ -306,7 +306,7 @@ export default class DB {
         });
     }
 
-    public GetUser(prenom: string, password: string): Promise<boolean | DBAuthResponse> {
+    public GetUser(prenom: string, password: string): Promise<string | DBAuthResponse> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.prenom} = ? AND ${this.userTable.password} = ?`, [prenom, password])
@@ -325,7 +325,7 @@ export default class DB {
                             });
                         }
                         else {
-                            resolve(false);
+                            resolve(JSON.stringify({ success: false }));
                         }
                     })
                     .catch((err) => {
@@ -361,13 +361,13 @@ export default class DB {
         });
     }
 
-    public Deconnexion(token: string): Promise<boolean> {
+    public Deconnexion(token: string): Promise<string> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.pollConnexion.query(`DELETE FROM ${this.database}.${this.aouthTable.table} WHERE ${this.aouthTable.token} = ?`, [token])
                     .then((_res) => {
                         this.emitEvent('query', { type: 'Deconnexion', success: true, token: token, connexion: this.pollConnexion });
-                        resolve(true);
+                        resolve(JSON.stringify({ success: true }));
                     })
                     .catch((err) => {
                         this.emitEvent('error', { message: 'Query failed', operation: 'Deconnexion', error: err });
