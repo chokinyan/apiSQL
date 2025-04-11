@@ -361,13 +361,13 @@ export default class DB {
         });
     }
 
-    public Deconnexion(token: string): Promise<string> {
+    public Deconnexion(token: string): Promise<Object> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.pollConnexion.query(`DELETE FROM ${this.database}.${this.aouthTable.table} WHERE ${this.aouthTable.token} = ?`, [token])
                     .then((_res) => {
                         this.emitEvent('query', { type: 'Deconnexion', success: true, token: token, connexion: this.pollConnexion });
-                        resolve(JSON.stringify({ success: true }));
+                        resolve({ success: true });
                     })
                     .catch((err) => {
                         this.emitEvent('error', { message: 'Query failed', operation: 'Deconnexion', error: err });

@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import database from './database';
 import mqtt from 'mqtt';
+import bodyParser from 'body-parser';
 
 let finCourseConnected : boolean = false;
 let etatPorteConnected : boolean = false;
@@ -51,32 +52,50 @@ const mqttClient = mqtt.connect(process.env.MQTT_HOST as string, {
 const app = express();
 const portHttps = 3001;
 const portHttp = 3000;
+
+app.use(bodyParser.json());
+
 const option : https.ServerOptions = {
     key: fs.readFileSync(path.join(__dirname, '../certificat/localhost.key')),
     cert: fs.readFileSync(path.join(__dirname, '../certificat/localhost.crt')),
 };
+
+const base64Encoding = (data: string | Object,isJson:boolean=false) => {
+    if(isJson && typeof data === 'object'){
+        return Buffer.from(JSON.stringify(data)).toString('base64');
+    }
+    return Buffer.from(data as string).toString('base64');
+}
+
+const base64Decoding = (data: string,isJson:boolean=false) => {
+    if(isJson){
+        return JSON.parse(Buffer.from(data, 'base64').toString('utf-8'));
+    }
+    return Buffer.from(data, 'base64').toString('utf-8');
+}
+
 /* API */
 
 app.get('/Item', (req: Request, res: Response) => {
     const params = req.query;
     if (params && params.token) {
         db.GetItemByUser(params.token as string).then((data) => {
-            res.status(200).send(JSON.stringify(data));
+            res.status(200).send(base64Encoding(data,true));
         }).catch((_err) => {
-            res.status(404).send("{error : Error}");
+            res.status(404).send(base64Encoding("{error : Error}"));
         });
     } else {
-        res.status(401).send("{error : Missing token}");
+        res.status(401).send(base64Encoding("{error : Missing token}"));
     }
 
 });
 
 app.get('/FinCourse', (_req: Request, res: Response) => {
     if(!finCourseConnected){
-        res.status(404).send("{Error: MQTT not connected}");
+        res.status(404).send(base64Encoding("{error: MQTT not connected}"));
         return;
     }
-    res.status(200).send({ etat: finCourse });
+    res.status(200).send(base64Encoding({ etat: finCourse },true));
 });
 
 app.route('/Authentification')
@@ -91,7 +110,7 @@ app.route('/Authentification')
                 JSON.parse(data.toString());
             }
             catch (err) {
-                res.status(404).send("{error : Error}");
+                res.status(404).send(base64Encoding("{error : Error}"));
                 return;
             }
             const body = JSON.parse(data.toString());
@@ -99,55 +118,55 @@ app.route('/Authentification')
                 case "login":
                     if (body && body.user && body.password) {
                         db.GetUser(body.user, body.password).then((data) => {
-                            res.status(200).send(JSON.stringify(data));
+                            res.status(200).send(base64Encoding(data,true));
                         }).catch((_err) => {
-                            res.status(404).send("{error : Error}");
+                            res.status(404).send(base64Encoding("{error : Error}"));
                         });
                     } else {
-                        res.status(404).send("{error : Missing user or password}");
+                        res.status(404).send(base64Encoding("{error : Missing user or password}"));
                     }
                     break;
                 case "pin":
                     if (body && body.code) {
                         db.GetUserByPin(body.code).then((data) => {
-                            res.status(200).send(JSON.stringify(data));
+                            res.status(200).send(base64Encoding(data,true));
                         }).catch((_err) => {
-                            res.status(404).send("{error : Error}");
+                            res.status(404).send(base64Encoding("{error : Error}"));
                         });
                     } else {
-                        res.status(404).send("{error : Missing code}");
+                        res.status(404).send(base64Encoding("{error : Missing pin}"));
                     }
                     break;
                 case "visage":
                     if (body && body.visage) {
                         db.GetUserByVisage(body.visage).then((data) => {
-                            res.status(200).send(JSON.stringify(data));
+                            res.status(200).send(base64Encoding(data,true));
                         }).catch((_err) => {
-                            res.status(404).send("{error : Error}");
+                            res.status(404).send(base64Encoding("{error : Error}"));
                         });
                     } else {
-                        res.status(404).send("{error : Missing visage data}");
+                        res.status(404).send(base64Encoding("{error : Missing visage data}"));
                     }
                     break;
                 case "rfid":
                     if (body && body.rfid) {
                         db.GetUserByRfid(body.rfid).then((data) => {
-                            res.status(200).send(JSON.stringify(data));
+                            res.status(200).send(base64Encoding(data,true));
                         }).catch((_err) => {
-                            res.status(404).send("{error : Error}");
+                            res.status(404).send(base64Encoding("{error : Error}"));
                         });
                     } else {
-                        res.status(404).send("{error : Missing rfid}");
+                        res.status(404).send(base64Encoding("{error : Missing rfid}"));
                     }
                     break;
                 default:
-                    res.status(404).send("{error: Invalid action}");
+                    res.status(404).send(base64Encoding("{error : Missing action}"));
                     break;
             }
         });
     }
     catch (err) {
-        res.status(404).send("{error : Error}");
+        res.status(404).send(base64Encoding("{error : Error}"));
     }
 })
 .delete((req: Request, res: Response) => {
@@ -156,15 +175,15 @@ app.route('/Authentification')
             const body = JSON.parse(data.toString());
             if (body && body.token) {
                 db.Deconnexion(body.token).then((data) => {
-                    res.status(200).send(data);
+                    res.status(200).send(base64Encoding(data,true));
                 }).catch((_err) => {
-                    res.status(404).send("{error : Error}");
+                    res.status(404).send(base64Encoding("{error : Error}"));
                 });
             } else {
-                res.status(404).send("{error : Missing token}");
+                res.status(404).send(base64Encoding("{error : Missing token}"));
             }
         } catch (err) {
-            res.status(404).send("{error : Error}");
+            res.status(404).send(base64Encoding("{error : Error}"));
         }
     });
 });
@@ -173,7 +192,7 @@ app.route('/EtatPorte')
 .post((req: Request, res: Response) => {
     try {
         if (req.headers['content-type'] !== "application/json" || !req.headers['content-type']) {
-            res.status(404).send("{error : Not JSON}");
+            res.status(404).send(base64Encoding("{error : Not JSON}"));
             return;
         }
         req.on('data', (data) => {
@@ -181,28 +200,28 @@ app.route('/EtatPorte')
                 JSON.parse(data.toString());
             }
             catch (err) {
-                res.status(404).send("{error : Error}");
+                res.status(404).send(base64Encoding("{error : Error}"));
                 return;
             }
             const body = JSON.parse(data.toString());
             if (body && body.etat && etatPorteConnected) {
                 mqttClient.publish(process.env.MQTT_TOPIC_ETAT_LOCK as string, body.etat);
-                res.status(200).send("OK");
+                res.status(200).send(base64Encoding({ etat: body.etat },true));
             } else {
-                res.status(404).send("{error : Missing etat}");
+                res.status(404).send(base64Encoding("{error : Missing etat}"));
             }
         });
     }
     catch (err) {
-        res.status(404).send("{error : Error}");
+        res.status(404).send(base64Encoding("{error : Error}"));
     }
 })
 .get((_req: Request, res: Response) => {
     if(!etatPorteConnected){
-        res.status(404).send("{error: MQTT not connected}");
+        res.status(404).send(base64Encoding("{error: MQTT not connected}"));
         return;
     }
-    res.status(200).send({ etat: etatPorte });
+    res.status(200).send(base64Encoding({ etat: etatPorte },true));
 });
 
 /* Database */
