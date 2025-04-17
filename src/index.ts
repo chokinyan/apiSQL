@@ -140,7 +140,7 @@ app.route('/Authentification')
                     }
                     break;
                 case "pin":
-                    if (body && body.code) {
+                    if (body && body.code && /^[0-9]{4}$/.test(body.code)) {
                         db.GetUserByPin(body.code).then((data) => {
                             res.status(200).json(data);
                         }).catch((_err) => {
@@ -176,66 +176,6 @@ app.route('/Authentification')
                     res.status(400).json({ error: "Missing action" });
                     break;
             }
-
-            //req.on('data', (data) => {
-            //    try {
-            //        JSON.parse(data.toString());
-            //    }
-            //    catch (err) {
-            //        res.status(404).json(base64Encoding("{error : Error}"));
-            //        return;
-            //    }
-            //    const body = JSON.parse(data.toString());
-            //    switch (body.action) {
-            //        case "login":
-            //            if (body && body.user && body.password) {
-            //                db.GetUser(body.user, body.password).then((data) => {
-            //                    res.status(200).json(base64Encoding(data, true));
-            //                }).catch((_err) => {
-            //                    res.status(404).json(base64Encoding("{error : Error}"));
-            //                });
-            //            } else {
-            //                res.status(404).json(base64Encoding("{error : Missing user or password}"));
-            //            }
-            //            break;
-            //        case "pin":
-            //            if (body && body.code) {
-            //                db.GetUserByPin(body.code).then((data) => {
-            //                    res.status(200).json(base64Encoding(data, true));
-            //                }).catch((_err) => {
-            //                    res.status(404).json(base64Encoding("{error : Error}"));
-            //                });
-            //            } else {
-            //                res.status(404).json(base64Encoding("{error : Missing pin}"));
-            //            }
-            //            break;
-            //        case "visage":
-            //            if (body && body.visage) {
-            //                db.GetUserByVisage(body.visage).then((data) => {
-            //                    res.status(200).json(base64Encoding(data, true));
-            //                }).catch((_err) => {
-            //                    res.status(404).json(base64Encoding("{error : Error}"));
-            //                });
-            //            } else {
-            //                res.status(404).json(base64Encoding("{error : Missing visage data}"));
-            //            }
-            //            break;
-            //        case "rfid":
-            //            if (body && body.rfid) {
-            //                db.GetUserByRfid(body.rfid).then((data) => {
-            //                    res.status(200).json(base64Encoding(data, true));
-            //                }).catch((_err) => {
-            //                    res.status(404).json(base64Encoding("{error : Error}"));
-            //                });
-            //            } else {
-            //                res.status(404).json(base64Encoding("{error : Missing rfid}"));
-            //            }
-            //            break;
-            //        default:
-            //            res.status(404).json(base64Encoding("{error : Missing action}"));
-            //            break;
-            //    }
-            //});
         }
         catch (err) {
             res.status(500).json({ error: "Error" });
@@ -282,23 +222,7 @@ app.route('/EtatPorte')
                 res.status(200).json({ etat: body.etat });
             } else {
                 res.status(400).json("{error : Missing etat}");
-            }
-            //req.on('data', (data) => {
-            //    try {
-            //        JSON.parse(data.toString());
-            //    }
-            //    catch (err) {
-            //        res.status(404).json(base64Encoding("{error : Error}"));
-            //        return;
-            //    }
-            //    const body = JSON.parse(data.toString());
-            //    if (body && body.etat && etatPorteConnected) {
-            //        mqttClient.publish(process.env.MQTT_TOPIC_ETAT_LOCK as string, body.etat);
-            //        res.status(200).json(base64Encoding({ etat: body.etat }, true));
-            //    } else {
-            //        res.status(404).json(base64Encoding("{error : Missing etat}"));
-            //    }
-            //});
+            }          
         }
         catch (_err) {
             res.status(500).json("{error : Error}");
