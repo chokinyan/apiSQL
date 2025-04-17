@@ -182,21 +182,25 @@ app.route('/Authentification')
         }
     })
     .delete((req: Request, res: Response) => {
-        req.on('data', (data) => {
-            try {
-                const body = JSON.parse(data.toString());
-                if (body && body.token) {
-                    db.Deconnexion(body.token).then((data) => {
-                        res.status(200).json(data);
-                    }).catch((_err) => {
-                        res.status(500).json("{error : Error}");
-                    });
-                } else {
-                    res.status(400).json("{error : Missing token}");
-                }
-            } catch (err) {
-                res.status(500).json("{error : Error}");
-            }
+        if (!req.headers['content-type'] || !req.headers['content-type'].includes('application/json')) {
+            res.status(400).json("{error : Not JSON}");
+            return;
+        }
+
+        if (!req.body) {
+            res.status(400).json("{error : Empty body}");
+            return;
+        }
+
+        if (!req.body.token) {
+            res.status(400).json("{error : Missing token}");
+            return;
+        }
+
+        db.Deconnexion(req.body.token).then((data) => {
+            res.status(200).json(data);
+        }).catch((_err) => {
+            res.status(500).json("{error : Error}");
         });
     });
 
@@ -222,7 +226,7 @@ app.route('/EtatPorte')
                 res.status(200).json({ etat: body.etat });
             } else {
                 res.status(400).json("{error : Missing etat}");
-            }          
+            }
         }
         catch (_err) {
             res.status(500).json("{error : Error}");
