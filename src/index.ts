@@ -7,6 +7,21 @@ import database from './database';
 import mqtt from 'mqtt';
 import bodyParser from 'body-parser';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+
+const base64Encoding = (data: string | Object, isJson: boolean = false) => {
+    if (isJson && typeof data === 'object') {
+        return Buffer.from(JSON.stringify(data)).toString('base64');
+    }
+    return Buffer.from(data as string).toString('base64');
+}
+
+const base64Decoding = (data: string, isJson: boolean = false) => {
+    if (isJson) {
+        return JSON.parse(Buffer.from(data, 'base64').toString('utf-8'));
+    }
+    return Buffer.from(data, 'base64').toString('utf-8');
+}
 
 let finCourseConnected: boolean = false;
 let etatPorteConnected: boolean = false;
@@ -54,27 +69,24 @@ const app = express();
 const portHttps = 3001;
 const portHttp = 3000;
 
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: base64Encoding("{error : Too many requests}"),
+});
+
+app.use(limiter);
 app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '50mb' }));
 app.use(helmet());
+app.use(function(req, res) {
+    res.redirect('https://' + req.headers.host + req.originalUrl);
+});
 
 const option: https.ServerOptions = {
     key: fs.readFileSync(path.join(__dirname, '../certificat/localhost.key')),
     cert: fs.readFileSync(path.join(__dirname, '../certificat/localhost.crt')),
 };
-
-const base64Encoding = (data: string | Object, isJson: boolean = false) => {
-    if (isJson && typeof data === 'object') {
-        return Buffer.from(JSON.stringify(data)).toString('base64');
-    }
-    return Buffer.from(data as string).toString('base64');
-}
-
-const base64Decoding = (data: string, isJson: boolean = false) => {
-    if (isJson) {
-        return JSON.parse(Buffer.from(data, 'base64').toString('utf-8'));
-    }
-    return Buffer.from(data, 'base64').toString('utf-8');
-}
 
 /* API */
 

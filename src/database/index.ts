@@ -1,6 +1,12 @@
 import mariadb from "mariadb";
+import {randomBytes} from "crypto";
 
 export type DBEventType = 'connect' | 'disconnect' | 'error' | 'query' | 'reconnect';
+
+export interface DBError {
+    operation: string;
+    error: Error;
+}
 
 export interface DBEventListener {
     eventType: DBEventType;
@@ -90,8 +96,7 @@ export default class DB {
             this.pollConnexion = (conn as mariadb.PoolConnection);
             this.emitEvent('connect', { success: true, connexion: this.pollConnexion });
         }).catch((err) => {
-            console.error('Database connection failed');
-            this.emitEvent('error', { message: 'Connection failed', error: err });
+            this.emitEvent('error', { operation: 'Connection', error: err });
         });
         process.on('SIGINT', () => {
             this.OnProgammeClose();
@@ -118,7 +123,6 @@ export default class DB {
                 }).getConnection());
             }
             catch (err) {
-                console.error('Database connection failed:', err);
                 reject(err);
             }
         });
@@ -130,12 +134,10 @@ export default class DB {
                 this.pollConnexion = (conn as mariadb.PoolConnection);
                 this.emitEvent('reconnect', { success: true, connexion: this.pollConnexion });
             }).catch((err) => {
-                console.error('Database connection failed');
-                this.emitEvent('error', { message: 'Reconnection failed', error: err });
+                this.emitEvent('error', { operation: 'Reconnection', error: err });
             });
         }).catch((err) => {
-            console.error('Database connection failed');
-            this.emitEvent('error', { message: 'Connection close failed during reconnect', error: err });
+            this.emitEvent('error', { operation: 'Connection during reconnect', error: err });
         });
     }
 
@@ -148,13 +150,11 @@ export default class DB {
                         resolve(res);
                     })
                     .catch((err) => {
-                        this.emitEvent('error', { message: 'Query failed', operation: 'GetItemByUser', error: err });
+                        this.emitEvent('error', { operation: 'GetItemByUser', error: err });
                         reject(err);
                     });
             } else {
-                const err = "pas de poll Con";
-                this.emitEvent('error', { message: err, operation: 'GetItemByUser' });
-                reject(new Error(err));
+                this.NoPoolConError('GetItemByUser');
             }
         });
     }
@@ -169,14 +169,12 @@ export default class DB {
                             resolve(JSON.stringify({ success: true }));
                         })
                         .catch((err) => {
-                            this.emitEvent('error', { message: 'Query failed', operation: 'PutItemBtUser', error: err });
+                            this.emitEvent('error', { operation: 'PutItemBtUser', error: err });
                             reject(err);
                         });
                 });
             } else {
-                const err = "pas de poll Con";
-                this.emitEvent('error', { message: err, operation: 'PutItemBtUser' });
-                reject(new Error(err));
+                this.NoPoolConError('PutItemBtUser');
             }
         });
     }
@@ -196,9 +194,7 @@ export default class DB {
                         reject(err);
                     });
             } else {
-                const err = "pas de poll Con";
-                this.emitEvent('error', { message: err, operation: 'GetUserIdByToken' });
-                reject(new Error(err));
+                this.NoPoolConError('GetUserIdByToken');
             }
         });
     }
@@ -226,13 +222,11 @@ export default class DB {
                         }
                     })
                     .catch((err) => {
-                        this.emitEvent('error', { message: 'Query failed', operation: 'GetUser', error: err });
+                        this.emitEvent('error', { operation: 'GetUser', error: err });
                         reject(err);
                     });
             } else {
-                const err = "pas de poll Con";
-                this.emitEvent('error', { message: err, operation: 'GetUser' });
-                reject(new Error(err));
+                this.NoPoolConError('GetUserByRfid');
             }
         });
     }
@@ -260,13 +254,11 @@ export default class DB {
                         }
                     })
                     .catch((err) => {
-                        this.emitEvent('error', { message: 'Query failed', operation: 'GetUser', error: err });
+                        this.emitEvent('error', {operation: 'GetUser', error: err });
                         reject(err);
                     });
             } else {
-                const err = "pas de poll Con";
-                this.emitEvent('error', { message: err, operation: 'GetUser' });
-                reject(new Error(err));
+                this.NoPoolConError('GetUserByVisage');
             }
         });
     }
@@ -286,7 +278,6 @@ export default class DB {
                                     prenom: res[0].prenom
                                 })
                             }).catch((err) => {
-                                console.log(err);
                                 reject(err);
                             });
                         }
@@ -295,13 +286,11 @@ export default class DB {
                         }
                     })
                     .catch((err) => {
-                        this.emitEvent('error', { message: 'Query failed', operation: 'GetUser', error: err });
+                        this.emitEvent('error', { operation: 'GetUser', error: err });
                         reject(err);
                     });
             } else {
-                const err = "pas de poll Con";
-                this.emitEvent('error', { message: err, operation: 'GetUser' });
-                reject(new Error(err));
+                this.NoPoolConError('GetUserByPin');
             }
         });
     }
@@ -329,13 +318,11 @@ export default class DB {
                         }
                     })
                     .catch((err) => {
-                        this.emitEvent('error', { message: 'Query failed', operation: 'GetUser', error: err });
+                        this.emitEvent('error', { operation: 'GetUser', error: err });
                         reject(err);
                     });
             } else {
-                const err = "pas de poll Con";
-                this.emitEvent('error', { message: err, operation: 'GetUser' });
-                reject(new Error(err));
+                this.NoPoolConError('GetUser');
             }
         });
     }
@@ -343,20 +330,18 @@ export default class DB {
     private CreateAuth(userId: string): Promise<string> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
-                const token = crypto.getRandomValues(new Uint32Array(16)).join('');
+                const token = randomBytes(16).toString('hex');
                 this.pollConnexion.query(`INSERT INTO ${this.database}.${this.aouthTable.table} (${this.aouthTable.id},${this.aouthTable.token}) VALUES (?,?)`, [userId, token])
                     .then((_res) => {
                         this.emitEvent('query', { type: 'CreateAuth', success: true, userId: userId, connexion: this.pollConnexion });
                         resolve(token);
                     })
                     .catch((err) => {
-                        this.emitEvent('error', { message: 'Query failed', operation: 'CreateAuth', error: err });
+                        this.emitEvent('error', { operation: 'CreateAuth', error: err });
                         reject(err);
                     });
             } else {
-                const err = "pas de poll Con";
-                this.emitEvent('error', { message: err, operation: 'CreateAuth' });
-                reject(new Error(err));
+                this.NoPoolConError('CreateAuth');
             }
         });
     }
@@ -370,13 +355,11 @@ export default class DB {
                         resolve({ success: true });
                     })
                     .catch((err) => {
-                        this.emitEvent('error', { message: 'Query failed', operation: 'Deconnexion', error: err });
+                        this.emitEvent('error', { operation: 'Deconnexion', error: err });
                         reject(err);
                     });
             } else {
-                const err = "pas de poll Con";
-                this.emitEvent('error', { message: err, operation: 'Deconnexion' });
-                reject(new Error(err));
+                this.NoPoolConError('Deconnexion');
             }
         });
     }
@@ -425,5 +408,13 @@ export default class DB {
 
     public IsConnect(): boolean {
         return this.isConnect;
+    }
+
+    private NoPoolConError(operation: string): DBError {
+        this.emitEvent('error', { error: new Error('No pool connection'), operation: `${operation}` });
+        return {
+            operation: operation,
+            error: new Error('No pool connection')
+        };
     }
 }
