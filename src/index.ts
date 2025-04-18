@@ -75,14 +75,15 @@ const limiter = rateLimit({
     message: base64Encoding("{error : Too many requests}"),
 });
 
-app.use(limiter);
-app.use(bodyParser.json({ limit: '50mb' }));
-app.use(helmet());
-app.use(function (req, res) {
+app.use((req, res,next)=> {
     if (req.headers['x-forwarded-proto'] !== 'https') {
         res.redirect('https://' + req.headers.host + req.originalUrl);
     }
+    next();
 });
+app.use(limiter);
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(helmet());
 
 const option: https.ServerOptions = {
     key: fs.readFileSync(path.join(__dirname, '../certificat/localhost.key')),

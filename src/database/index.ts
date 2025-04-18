@@ -112,15 +112,16 @@ export default class DB {
     private Connexion(): Promise<mariadb.PoolConnection | void> {
         return new Promise((resolve, reject) => {
             try {
-                this.isConnect = true;
-                resolve(mariadb.createPool({
+                const conn = mariadb.createPool({
                     host: this.host,
                     port: this.port,
                     user: this.user,
                     password: this.password,
                     database: this.database,
                     connectionLimit: 5,
-                }).getConnection());
+                }).getConnection();
+                this.isConnect = true;
+                resolve(conn);
             }
             catch (err) {
                 reject(err);
@@ -301,7 +302,7 @@ export default class DB {
                 this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.prenom} = ? AND ${this.userTable.password} = ?`, [prenom, password])
                     .then((res) => {
                         const success = res.length === 1;
-                        this.emitEvent('query', { type: 'GetUser', success: success, prenom: prenom, password: password, connexion: this.pollConnexion });
+                        this.emitEvent('query', { type: 'GetUser', success: success, prenom: prenom, connexion: this.pollConnexion });
                         if (success) {
                             this.CreateAuth(res[0].id).then((token) => {
                                 resolve({
@@ -330,7 +331,7 @@ export default class DB {
     private CreateAuth(userId: string): Promise<string> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
-                const token = randomBytes(16).toString('ascii');
+                const token = randomBytes(32).toString('base64').replace(/\//g, '0').replace(/\+/g, '1').replace(/=/g, '2');
                 this.pollConnexion.query(`INSERT INTO ${this.database}.${this.aouthTable.table} (${this.aouthTable.id},${this.aouthTable.token}) VALUES (?,?)`, [userId, token])
                     .then((_res) => {
                         this.emitEvent('query', { type: 'CreateAuth', success: true, userId: userId, connexion: this.pollConnexion });
