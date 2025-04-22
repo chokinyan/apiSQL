@@ -59,10 +59,12 @@ const db: database = new database({
     }
 });
 
-const mqttClient = mqtt.connect(process.env.MQTT_HOST as string, {
+const mqttClient = mqtt.connect({
+    host : process.env.MQTT_HOST as string,
     port: process.env.MQTT_PORT as unknown as number,
     username: process.env.MQTT_USER as string,
     password: process.env.MQTT_PASSWORD as string,
+    protocol : "mqtt"
 });
 
 const app = express();
@@ -75,12 +77,12 @@ const limiter = rateLimit({
     message: base64Encoding("{error : Too many requests}"),
 });
 
-app.use((req, res,next)=> {
-    if (req.headers['x-forwarded-proto'] !== 'https') {
-        res.redirect('https://' + req.headers.host + req.originalUrl);
-    }
-    next();
-});
+//app.use((req, res,next)=> {
+//    if (req.headers['x-forwarded-proto'] !== 'https') {
+//        res.redirect('https://' + req.headers.host + req.originalUrl);
+//    }
+//    next();
+//});
 app.use(limiter);
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(helmet());
@@ -222,8 +224,8 @@ app.route('/EtatPorte')
             }
 
             const body = req.body;
-            if (body && body.etat && /^[0-1]{1}$/.test(body.etat)) {
-                mqttClient.publish(process.env.MQTT_TOPIC_ETAT_LOCK as string, body.etat);
+            if (body && body.etat && /^[0-1]{1}$/.test(body.etat)) {                
+                mqttClient.publish(process.env.MQTT_TOPIC_ETAT_LOCK?.trim() as string, `${body.etat}`);
                 res.status(200).json({ etat: body.etat });
             } else {
                 res.status(400).json("{error : Missing etat}");
@@ -249,6 +251,7 @@ db.on('error', (data) => {
 /* MQTT */
 
 mqttClient.on('message', (topic, payload, _packet) => {
+    console.log(topic);
     switch (topic) {
         case process.env.MQTT_TOPIC_ETAT_LOCK:
             etatPorte = payload.toString() == "1" ? "1" : "0";
@@ -260,6 +263,10 @@ mqttClient.on('message', (topic, payload, _packet) => {
             console.log("Error: Invalid topic");
             break;
     }
+});
+
+mqttClient.on("error",(err)=>{
+    console.log(err);
 });
 
 /* Start */
@@ -276,19 +283,19 @@ https.createServer(option, app).listen(portHttps, () => {
     console.log(`Server is running at https://localhost:${portHttps}`);
 });
 
-mqttClient.subscribe(process.env.MQTT_TOPIC_ETAT_LOCK as string, (err, _grant, _packet) => {
+mqttClient.subscribe(process.env.MQTT_TOPIC_ETAT_LOCK?.trim() as string, (err, _grant, _packet) => {
     if (err) {
         console.error(err);
         return;
     }
-    console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_ETAT_LOCK);
+    console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_ETAT_LOCK?.trim());
     etatPorteConnected = true;
 });
-mqttClient.subscribe(process.env.MQTT_TOPIC_FIN_COURSE as string, (err, _grant, _packet) => {
+mqttClient.subscribe(process.env.MQTT_TOPIC_FIN_COURSE?.trim() as string, (err, _grant, _packet) => {
     if (err) {
         console.error(err);
         return;
     }
-    console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_FIN_COURSE);
+    console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_FIN_COURSE?.trim());
     finCourseConnected = true;
 });
