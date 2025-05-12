@@ -9,8 +9,7 @@
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
-        "sourceMap": true,
-        "removeComments": true,
+        "removeComments": true
     },
     "include": [
         "src/**/*"

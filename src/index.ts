@@ -60,11 +60,11 @@ const db: database = new database({
 });
 
 const mqttClient = mqtt.connect({
-    host : process.env.MQTT_HOST as string,
+    host: process.env.MQTT_HOST as string,
     port: process.env.MQTT_PORT as unknown as number,
     username: process.env.MQTT_USER as string,
     password: process.env.MQTT_PASSWORD as string,
-    protocol : "mqtt"
+    protocol: "mqtt"
 });
 
 const app = express();
@@ -115,6 +115,52 @@ app.get('/FinCourse', (_req: Request, res: Response) => {
     }
     res.status(200).json({ etat: finCourse });
 });
+
+app.route('/Item')
+    .get((req: Request, res: Response) => {
+        const params = req.query;
+        if (params && params.token) {
+            db.GetItemByUser(params.token as string).then((data) => {
+                res.status(200).json(data);
+            }).catch((_err) => {
+                res.status(500).json({ error: "Error" });
+            });
+        } else {
+            res.status(400).json({ error: "Missing token" });
+        }
+    })
+    .post((req: Request, res: Response) => {
+        try {
+            if (!req.headers['content-type'] || !req.headers['content-type'].includes('application/json')) {
+                res.status(400).json({ error: "Not JSON" });
+                return;
+            }
+
+            if (!req.body) {
+                res.status(400).json({ error: "Empty body" });
+                return;
+            }
+
+            const body = req.body;
+            if (body && body.token && body.name && body.container) {
+                db.PutItemBtUser(body.token, {
+                    name: body.name,
+                    container: body.container,
+                    expire: body.expire,
+                    image: body.image
+                }).then((data) => {
+                    res.status(200).json(data);
+                }).catch((_err) => {
+                    res.status(500).json({ error: "Error" });
+                });
+            } else {
+                res.status(400).json({ error: "Missing token or name or container" });
+            }
+        }
+        catch (err) {
+            res.status(500).json({ error: "Error" });
+        }
+    })
 
 app.route('/Authentification')
     .post((req: Request, res: Response) => {
@@ -224,7 +270,7 @@ app.route('/EtatPorte')
             }
 
             const body = req.body;
-            if (body && body.etat && /^[0-1]{1}$/.test(body.etat)) {                
+            if (body && body.etat && /^[0-1]{1}$/.test(body.etat)) {
                 mqttClient.publish(process.env.MQTT_TOPIC_ETAT_LOCK?.trim() as string, `${body.etat}`);
                 res.status(200).json({ etat: body.etat });
             } else {
@@ -265,7 +311,7 @@ mqttClient.on('message', (topic, payload, _packet) => {
     }
 });
 
-mqttClient.on("error",(err)=>{
+mqttClient.on("error", (err) => {
     console.log(err);
 });
 

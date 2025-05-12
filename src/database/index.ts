@@ -1,5 +1,5 @@
 import mariadb from "mariadb";
-import {randomBytes} from "crypto";
+import { randomBytes } from "crypto";
 
 export type DBEventType = 'connect' | 'disconnect' | 'error' | 'query' | 'reconnect';
 
@@ -45,6 +45,7 @@ export interface ItemTable {
     expire: string;
     container: string;
     table: string;
+    image?: string;
 }
 
 export interface DBConfig {
@@ -64,10 +65,11 @@ export interface DBAuthResponse {
     prenom: string;
 }
 
-export interface UserItem{
+export interface UserItem {
     name: string;
     expire: string;
     container: string;
+    image?: string;
 }
 
 export default class DB {
@@ -160,11 +162,11 @@ export default class DB {
         });
     }
 
-    public PutItemBtUser(token: string,item : UserItem): Promise<string> {
+    public PutItemBtUser(token: string, item: UserItem): Promise<string> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.GetUserIdByToken(token).then((userId) => {
-                    (this.pollConnexion as mariadb.PoolConnection).query(`INSERT INTO ${this.database}.${this.itemTable.table} (${this.itemTable.id},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container}) VALUES (?,?,?,?)`, [userId, item.name , item.expire, item.container])
+                    (this.pollConnexion as mariadb.PoolConnection).query(`INSERT INTO ${this.database}.${this.itemTable.table} (${this.itemTable.id},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container}) VALUES (?,?,?,?)`, [userId, item.name, item.expire, item.container])
                         .then((_res) => {
                             this.emitEvent('query', { type: 'PutItemBtUser', success: true, token: token, connexion: this.pollConnexion });
                             resolve(JSON.stringify({ success: true }));
@@ -255,7 +257,7 @@ export default class DB {
                         }
                     })
                     .catch((err) => {
-                        this.emitEvent('error', {operation: 'GetUser', error: err });
+                        this.emitEvent('error', { operation: 'GetUser', error: err });
                         reject(err);
                     });
             } else {
