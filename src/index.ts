@@ -94,20 +94,6 @@ const option: https.ServerOptions = {
 
 /* API */
 
-app.get('/Item', (req: Request, res: Response) => {
-    const params = req.query;
-    if (params && params.token) {
-        db.GetItemByUser(params.token as string).then((data) => {
-            res.status(200).json(data);
-        }).catch((_err) => {
-            res.status(500).json({ error: "Error" });
-        });
-    } else {
-        res.status(400).json({ error: "Missing token" });
-    }
-
-});
-
 app.get('/FinCourse', (_req: Request, res: Response) => {
     if (!finCourseConnected) {
         res.status(500).json({ error: "MQTT not connected" });
