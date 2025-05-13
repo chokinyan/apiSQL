@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS `items` (
   `Date_Peremption` date NOT NULL,
   `Nom_produit` varchar(50) NOT NULL,
   `Container` varchar(50) NOT NULL,
+  `ImageUrl` varchar(100),
   KEY `id_UtilisateurItem` (`id_Utilisateur`),
   CONSTRAINT `id_UtilisateurItem` FOREIGN KEY (`id_Utilisateur`) REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
