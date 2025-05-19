@@ -166,10 +166,6 @@ export default class DB {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.GetUserIdByToken(token).then((userId) => {
-                    if (!userId) {
-                        this.emitEvent('error', { operation: 'PutItemBtUser', error: new Error('User not found') });
-                        reject(new Error('User not found'));
-                    }
                     (this.pollConnexion as mariadb.PoolConnection).query(`INSERT INTO ${this.database}.${this.itemTable.table} (${this.itemTable.id},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container}) VALUES (?,?,?,?)`, [userId, item.name, new Date(item.expire), item.container])
                         .then((_res) => {
                             this.emitEvent('query', { type: 'PutItemBtUser', success: true, token: token, connexion: this.pollConnexion });
@@ -192,7 +188,7 @@ export default class DB {
                 this.pollConnexion.query(`SELECT ${this.aouthTable.id} FROM ${this.database}.${this.aouthTable.table} WHERE ${this.aouthTable.token} = ?`, [token])
                     .then((res) => {
                         if (res.length === 1) {
-                            resolve(res[0]["id_Utilisateur"]);
+                            resolve(res[0][this.aouthTable.id]);
                         } else {
                             reject(new Error('Token not found'));
                         }
