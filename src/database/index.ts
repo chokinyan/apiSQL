@@ -192,7 +192,7 @@ export default class DB {
                 this.pollConnexion.query(`SELECT ${this.aouthTable.id} FROM ${this.database}.${this.aouthTable.table} WHERE ${this.aouthTable.token} = ?`, [token])
                     .then((res) => {
                         if (res.length === 1) {
-                            resolve(res[0].id);
+                            resolve(res[0]["id_Utilisateur"]);
                         } else {
                             reject(new Error('Token not found'));
                         }
