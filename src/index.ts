@@ -54,7 +54,8 @@ const db: database = new database({
         id: process.env.DB_ITEM_USER_COLLUM as string,
         name: process.env.DB_ITEM_NAME_COLLUM as string,
         container: process.env.DB_ITEM_CONTAINER_COLLUM as string,
-        expire: process.env.DB_ITEM_EXPIRE_COLLUM as string
+        expire: process.env.DB_ITEM_EXPIRE_COLLUM as string,
+        image: process.env.DB_ITEM_IMAGEURL_COLLUM as string
     }
 });
 
@@ -104,6 +105,7 @@ app.get('/FinCourse', (_req: Request, res: Response) => {
 app.route('/Item')
     .get((req: Request, res: Response) => {
         const params = req.query;
+
         if (params && params.token) {
             db.GetItemByUser(params.token as string).then((data) => {
                 res.status(200).json(data);
@@ -164,7 +166,7 @@ app.route('/Authentification')
             switch (body.action) {
                 case "login":
                     if (body && body.user && body.password) {
-                        db.UserConnexion({ name: body.user, password : body.password },"password").then((data) => {
+                        db.UserConnexion({ name: body.user, password: body.password }, "password").then((data) => {
                             res.status(200).json(data);
                         }).catch((_err) => {
                             res.status(500).json({ error: "Error" });
@@ -175,7 +177,7 @@ app.route('/Authentification')
                     break;
                 case "pin":
                     if (body && body.code && /^[0-9]{4}$/.test(body.code)) {
-                        db.UserConnexion(body.code,"pin").then((data) => {
+                        db.UserConnexion(body.code, "pin").then((data) => {
                             res.status(200).json(data);
                         }).catch((_err) => {
                             res.status(500).json("{error : Error}");
@@ -186,7 +188,7 @@ app.route('/Authentification')
                     break;
                 case "visage":
                     if (body && body.visage) {
-                        db.UserConnexion(body.visage,"visage").then((data) => {
+                        db.UserConnexion(body.visage, "visage").then((data) => {
                             res.status(200).json(data);
                         }).catch((_err) => {
                             res.status(500).json("{error : Error}");
@@ -197,7 +199,7 @@ app.route('/Authentification')
                     break;
                 case "rfid":
                     if (body && body.rfid) {
-                        db.UserConnexion(body.rfid,"rfid").then((data) => {
+                        db.UserConnexion(body.rfid, "rfid").then((data) => {
                             res.status(200).json(data);
                         }).catch((_err) => {
                             res.status(500).json("{error : Error}");

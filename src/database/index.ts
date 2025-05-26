@@ -44,7 +44,7 @@ export interface ItemTable {
     expire: string;
     container: string;
     table: string;
-    image?: string;
+    image: string;
 }
 
 export interface DBConfig {
@@ -151,20 +151,24 @@ export default class DB {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.GetUserID(token, "token").then((userId) => {
-                    if (!userId) {
-                        this.emitEvent('error', { operation: 'GetItemByUser', error: new Error('User not found') });
+                    if (userId === undefined || userId === null || userId === '') {
+                        this.emitEvent('error', { operation: 'PutItemBtUser', error: new Error('User not found') });
                         reject(new Error('User not found'));
+                        return;
                     }
+                    (this.pollConnexion as mariadb.PoolConnection).query(`SELECT ${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container},${this.itemTable.image} FROM ${this.database}.${this.itemTable.table} WHERE ${this.itemTable.id} = ?`, [userId])
+                        .then((res) => {
+                            this.emitEvent('query', { type: 'GetItemByUser', success: true, token: token, connexion: this.pollConnexion });
+                            resolve(res);
+                        })
+                        .catch((err) => {
+                            this.emitEvent('error', { operation: 'GetItemByUser', error: err });
+                            reject(err);
+                        });
+                }).catch((err) => {
+                    this.emitEvent('error', { operation: 'GetItemByUser', error: err });
+                    reject(err);
                 });
-                //this.pollConnexion.query(`SELECT ${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container} FROM ${this.database}.${this.itemTable.table} INNER JOIN ${this.aouthTable.table} ON ${this.itemTable.id}=${this.aouthTable.id} WHERE ${this.aouthTable.token} = ? `, [token])
-                //    .then((res) => {
-                //        this.emitEvent('query', { type: 'GetItemByUser', success: true, token: token, connexion: this.pollConnexion });
-                //        resolve(res);
-                //    })
-                //    .catch((err) => {
-                //        this.emitEvent('error', { operation: 'GetItemByUser', error: err });
-                //        reject(err);
-                //    });
             } else {
                 this.NoPoolConError('GetItemByUser');
             }
@@ -174,7 +178,7 @@ export default class DB {
     public PutItemByUser(token: string, item: UserItem): Promise<string> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
-                this.GetUserID(token,"token").then((userId) => {
+                this.GetUserID(token, "token").then((userId) => {
                     if (userId === undefined || userId === null || userId === '') {
                         this.emitEvent('error', { operation: 'PutItemBtUser', error: new Error('User not found') });
                         reject(new Error('User not found'));
