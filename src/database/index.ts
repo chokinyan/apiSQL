@@ -174,11 +174,10 @@ export default class DB {
     public PutItemByUser(token: string, item: UserItem): Promise<string> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
-                this.GetUserID(token,"token").then((userId) => {
-                    if (userId === undefined || userId === null || userId === '') {
+                this.GetUserIdByToken(token).then((userId) => {
+                    if (!userId) {
                         this.emitEvent('error', { operation: 'PutItemBtUser', error: new Error('User not found') });
                         reject(new Error('User not found'));
-                        return;
                     }
                     (this.pollConnexion as mariadb.PoolConnection).query(`INSERT INTO ${this.database}.${this.itemTable.table} (${this.itemTable.id},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container}) VALUES (?,?,?,?)`, [userId, item.name, new Date(item.expire), item.container])
                         .then((_res) => {
@@ -192,6 +191,154 @@ export default class DB {
                 });
             } else {
                 this.NoPoolConError('PutItemBtUser');
+            }
+        });
+    }
+
+    private GetUserIdByToken(token: string): Promise<string> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.pollConnexion.query(`SELECT ${this.aouthTable.id} FROM ${this.database}.${this.aouthTable.table} WHERE ${this.aouthTable.token} = ?`, [token])
+                    .then((res) => {
+                        if (res.length === 1) {
+                            resolve(res[0].id);
+                        } else {
+                            reject(new Error('Token not found'));
+                        }
+                    })
+                    .catch((err) => {
+                        reject(err);
+                    });
+            } else {
+                this.NoPoolConError('GetUserIdByToken');
+            }
+        });
+    }
+
+    public GetUserByRfid(rfid: string): Promise<string | DBAuthResponse> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.rfid} = ?`, [rfid])
+                    .then((res) => {
+                        const success = res.length === 1;
+                        this.emitEvent('query', { type: 'GetUser', success: success, rfid: rfid, connexion: this.pollConnexion });
+                        if (success) {
+                            this.CreateAuth(res[0].id).then((token) => {
+                                resolve({
+                                    token: token,
+                                    nom: res[0].nom,
+                                    prenom: res[0].prenom
+                                });
+                            }).catch((err) => {
+                                reject(err);
+                            });
+                        }
+                        else {
+                            resolve(JSON.stringify({ success: false }));
+                        }
+                    })
+                    .catch((err) => {
+                        this.emitEvent('error', { operation: 'GetUser', error: err });
+                        reject(err);
+                    });
+            } else {
+                this.NoPoolConError('GetUserByRfid');
+            }
+        });
+    }
+
+    public GetUserByVisage(dataVisage: string): Promise<string | DBAuthResponse> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.visage} = ?`, [dataVisage])
+                    .then((res) => {
+                        const success = res.length === 1;
+                        this.emitEvent('query', { type: 'GetUser', success: success, DataVisage: dataVisage, connexion: this.pollConnexion });
+                        if (success) {
+                            this.CreateAuth(res[0].id).then((token) => {
+                                resolve({
+                                    token: token,
+                                    nom: res[0].nom,
+                                    prenom: res[0].prenom
+                                });
+                            }).catch((err) => {
+                                reject(err);
+                            });
+                        }
+                        else {
+                            resolve(JSON.stringify({ success: false }));
+                        }
+                    })
+                    .catch((err) => {
+                        this.emitEvent('error', { operation: 'GetUser', error: err });
+                        reject(err);
+                    });
+            } else {
+                this.NoPoolConError('GetUserByVisage');
+            }
+        });
+    }
+
+    public GetUserByPin(pin: string): Promise<string | DBAuthResponse> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.pin} = ?`, [pin])
+                    .then((res) => {
+                        const success = res.length === 1;
+                        this.emitEvent('query', { type: 'GetUser', success: success, pin: pin, connexion: this.pollConnexion });
+                        if (success) {
+                            this.CreateAuth(res[0].id).then((token) => {
+                                resolve({
+                                    token: token,
+                                    nom: res[0].nom,
+                                    prenom: res[0].prenom
+                                })
+                            }).catch((err) => {
+                                reject(err);
+                            });
+                        }
+                        else {
+                            resolve(JSON.stringify({ success: false }));
+                        }
+                    })
+                    .catch((err) => {
+                        this.emitEvent('error', { operation: 'GetUser', error: err });
+                        reject(err);
+                    });
+            } else {
+                this.NoPoolConError('GetUserByPin');
+            }
+        });
+    }
+
+    public GetUser(prenom: string, password: string): Promise<string | DBAuthResponse> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.prenom} = ? AND ${this.userTable.password} = ?`, [prenom, password])
+                    .then((res) => {
+                        const success = res.length === 1;
+                        this.emitEvent('query', { type: 'GetUser', success: success, prenom: prenom, connexion: this.pollConnexion });
+                        if (success) {
+                            this.CreateAuth(res[0].id).then((token) => {
+                                resolve({
+                                    token: token,
+                                    nom: res[0].nom,
+                                    prenom: res[0].prenom
+                                });
+                            }).catch((err) => {
+                                reject(err);
+                            });
+                        }
+                        else {
+                            resolve(JSON.stringify({ success: false }));
+                        }
+                    })
+                    .catch((err) => {
+                        this.emitEvent('error', { operation: 'GetUser', error: err });
+                        reject(err);
+                    });
+            } else {
+                this.NoPoolConError('GetUser');
             }
         });
     }
