@@ -1,5 +1,5 @@
-import mariadb from "mariadb";
 import { randomBytes } from "crypto";
+import mariadb from "mariadb";
 
 export type DBEventType = 'connect' | 'disconnect' | 'error' | 'query' | 'reconnect';
 
@@ -23,7 +23,6 @@ export interface UserTable {
     password: string;
     pin: string;
     rfid: string;
-    visage: string;
     table: string;
 }
 
@@ -59,7 +58,7 @@ export interface DBConfig {
     userTable: UserTable;
 }
 
-export interface DBAuthResponse {
+export interface AuthResponse {
     token: string;
     nom: string;
     prenom: string;
@@ -71,6 +70,10 @@ export interface UserItem {
     container: string;
     image?: string;
 }
+
+export type AuthMethods = "rfid" | "visage" | "pin" | "password" | "token";
+
+export type AuthData = string | { password: string, name: string };
 
 export default class DB {
     private pollConnexion: mariadb.PoolConnection | undefined;
@@ -147,28 +150,35 @@ export default class DB {
     public GetItemByUser(token: string): Promise<Array<UserItem>> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
-                this.pollConnexion.query(`SELECT ${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container} FROM ${this.database}.${this.itemTable.table} INNER JOIN ${this.aouthTable.table} ON ${this.itemTable.id}=${this.aouthTable.id} WHERE ${this.aouthTable.token} = ? `, [token])
-                    .then((res) => {
-                        this.emitEvent('query', { type: 'GetItemByUser', success: true, token: token, connexion: this.pollConnexion });
-                        resolve(res);
-                    })
-                    .catch((err) => {
-                        this.emitEvent('error', { operation: 'GetItemByUser', error: err });
-                        reject(err);
-                    });
+                this.GetUserID(token, "token").then((userId) => {
+                    if (!userId) {
+                        this.emitEvent('error', { operation: 'GetItemByUser', error: new Error('User not found') });
+                        reject(new Error('User not found'));
+                    }
+                });
+                //this.pollConnexion.query(`SELECT ${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container} FROM ${this.database}.${this.itemTable.table} INNER JOIN ${this.aouthTable.table} ON ${this.itemTable.id}=${this.aouthTable.id} WHERE ${this.aouthTable.token} = ? `, [token])
+                //    .then((res) => {
+                //        this.emitEvent('query', { type: 'GetItemByUser', success: true, token: token, connexion: this.pollConnexion });
+                //        resolve(res);
+                //    })
+                //    .catch((err) => {
+                //        this.emitEvent('error', { operation: 'GetItemByUser', error: err });
+                //        reject(err);
+                //    });
             } else {
                 this.NoPoolConError('GetItemByUser');
             }
         });
     }
 
-    public PutItemBtUser(token: string, item: UserItem): Promise<string> {
+    public PutItemByUser(token: string, item: UserItem): Promise<string> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
-                this.GetUserIdByToken(token).then((userId) => {
-                    if (!userId) {
+                this.GetUserID(token,"token").then((userId) => {
+                    if (userId === undefined || userId === null || userId === '') {
                         this.emitEvent('error', { operation: 'PutItemBtUser', error: new Error('User not found') });
                         reject(new Error('User not found'));
+                        return;
                     }
                     (this.pollConnexion as mariadb.PoolConnection).query(`INSERT INTO ${this.database}.${this.itemTable.table} (${this.itemTable.id},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container}) VALUES (?,?,?,?)`, [userId, item.name, new Date(item.expire), item.container])
                         .then((_res) => {
@@ -182,154 +192,6 @@ export default class DB {
                 });
             } else {
                 this.NoPoolConError('PutItemBtUser');
-            }
-        });
-    }
-
-    private GetUserIdByToken(token: string): Promise<string> {
-        return new Promise((resolve, reject) => {
-            if (this.pollConnexion) {
-                this.pollConnexion.query(`SELECT ${this.aouthTable.id} FROM ${this.database}.${this.aouthTable.table} WHERE ${this.aouthTable.token} = ?`, [token])
-                    .then((res) => {
-                        if (res.length === 1) {
-                            resolve(res[0].id);
-                        } else {
-                            reject(new Error('Token not found'));
-                        }
-                    })
-                    .catch((err) => {
-                        reject(err);
-                    });
-            } else {
-                this.NoPoolConError('GetUserIdByToken');
-            }
-        });
-    }
-
-    public GetUserByRfid(rfid: string): Promise<string | DBAuthResponse> {
-        return new Promise((resolve, reject) => {
-            if (this.pollConnexion) {
-                this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.rfid} = ?`, [rfid])
-                    .then((res) => {
-                        const success = res.length === 1;
-                        this.emitEvent('query', { type: 'GetUser', success: success, rfid: rfid, connexion: this.pollConnexion });
-                        if (success) {
-                            this.CreateAuth(res[0].id).then((token) => {
-                                resolve({
-                                    token: token,
-                                    nom: res[0].nom,
-                                    prenom: res[0].prenom
-                                });
-                            }).catch((err) => {
-                                reject(err);
-                            });
-                        }
-                        else {
-                            resolve(JSON.stringify({ success: false }));
-                        }
-                    })
-                    .catch((err) => {
-                        this.emitEvent('error', { operation: 'GetUser', error: err });
-                        reject(err);
-                    });
-            } else {
-                this.NoPoolConError('GetUserByRfid');
-            }
-        });
-    }
-
-    public GetUserByVisage(dataVisage: string): Promise<string | DBAuthResponse> {
-        return new Promise((resolve, reject) => {
-            if (this.pollConnexion) {
-                this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.visage} = ?`, [dataVisage])
-                    .then((res) => {
-                        const success = res.length === 1;
-                        this.emitEvent('query', { type: 'GetUser', success: success, DataVisage: dataVisage, connexion: this.pollConnexion });
-                        if (success) {
-                            this.CreateAuth(res[0].id).then((token) => {
-                                resolve({
-                                    token: token,
-                                    nom: res[0].nom,
-                                    prenom: res[0].prenom
-                                });
-                            }).catch((err) => {
-                                reject(err);
-                            });
-                        }
-                        else {
-                            resolve(JSON.stringify({ success: false }));
-                        }
-                    })
-                    .catch((err) => {
-                        this.emitEvent('error', { operation: 'GetUser', error: err });
-                        reject(err);
-                    });
-            } else {
-                this.NoPoolConError('GetUserByVisage');
-            }
-        });
-    }
-
-    public GetUserByPin(pin: string): Promise<string | DBAuthResponse> {
-        return new Promise((resolve, reject) => {
-            if (this.pollConnexion) {
-                this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.pin} = ?`, [pin])
-                    .then((res) => {
-                        const success = res.length === 1;
-                        this.emitEvent('query', { type: 'GetUser', success: success, pin: pin, connexion: this.pollConnexion });
-                        if (success) {
-                            this.CreateAuth(res[0].id).then((token) => {
-                                resolve({
-                                    token: token,
-                                    nom: res[0].nom,
-                                    prenom: res[0].prenom
-                                })
-                            }).catch((err) => {
-                                reject(err);
-                            });
-                        }
-                        else {
-                            resolve(JSON.stringify({ success: false }));
-                        }
-                    })
-                    .catch((err) => {
-                        this.emitEvent('error', { operation: 'GetUser', error: err });
-                        reject(err);
-                    });
-            } else {
-                this.NoPoolConError('GetUserByPin');
-            }
-        });
-    }
-
-    public GetUser(prenom: string, password: string): Promise<string | DBAuthResponse> {
-        return new Promise((resolve, reject) => {
-            if (this.pollConnexion) {
-                this.pollConnexion.query(`SELECT id,prenom,nom FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.prenom} = ? AND ${this.userTable.password} = ?`, [prenom, password])
-                    .then((res) => {
-                        const success = res.length === 1;
-                        this.emitEvent('query', { type: 'GetUser', success: success, prenom: prenom, connexion: this.pollConnexion });
-                        if (success) {
-                            this.CreateAuth(res[0].id).then((token) => {
-                                resolve({
-                                    token: token,
-                                    nom: res[0].nom,
-                                    prenom: res[0].prenom
-                                });
-                            }).catch((err) => {
-                                reject(err);
-                            });
-                        }
-                        else {
-                            resolve(JSON.stringify({ success: false }));
-                        }
-                    })
-                    .catch((err) => {
-                        this.emitEvent('error', { operation: 'GetUser', error: err });
-                        reject(err);
-                    });
-            } else {
-                this.NoPoolConError('GetUser');
             }
         });
     }
@@ -349,6 +211,119 @@ export default class DB {
                     });
             } else {
                 this.NoPoolConError('CreateAuth');
+            }
+        });
+    }
+
+    public UserConnexion(data: any, method: AuthMethods): Promise<string | AuthResponse> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.GetUserID(data, method).then((userId) => {
+                    (this.pollConnexion as mariadb.PoolConnection).query(`SELECT ${this.userTable.prenom},${this.userTable.nom} FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.id} = ?`, [userId])
+                        .then((res) => {
+                            if (res.length === 1) {
+                                this.CreateAuth(userId).then((token) => {
+                                    resolve({
+                                        token: token,
+                                        nom: res[0][this.userTable.nom],
+                                        prenom: res[0][this.userTable.prenom]
+                                    });
+                                }).catch((err) => {
+                                    reject(err);
+                                });
+                            } else {
+                                reject(new Error('User not found'));
+                            }
+                        })
+                        .catch((err) => {
+                            reject(err);
+                        });
+                }).catch((err) => {
+                    this.emitEvent('error', { operation: 'UserConnexion', error: err });
+                    reject(err);
+                });
+            } else {
+                this.NoPoolConError('GetUser');
+            }
+        });
+    }
+
+    private GetUserID(data: AuthData, method: AuthMethods): Promise<string> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+
+                let column: string | undefined;
+                if (method === 'rfid') {
+                    column = this.userTable.rfid;
+                } else if (method === 'pin') {
+                    column = this.userTable.pin;
+                } else if (method === 'visage') {
+                    column = this.userTable.prenom;
+                }
+
+                switch (method) {
+                    case 'password':
+                        if (typeof data !== 'object' || !data.password || !data.name) {
+                            reject(new Error('Invalid data format for password method'));
+                        }
+                        this.pollConnexion.query(
+                            `SELECT ${this.userTable.id} FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.password} = ? AND ${this.userTable.prenom} = ?`,
+                            [(data as { password: string, name: string }).name, (data as { password: string, name: string }).name]
+                        )
+                            .then((res) => {
+                                if (res.length === 1) {
+                                    resolve(res[0][this.userTable.id]);
+                                } else {
+                                    reject(new Error('User not found'));
+                                }
+                            })
+                            .catch((err) => {
+                                reject(err);
+                            });
+                        break;
+                    case 'token':
+                        if (typeof data !== 'string') {
+                            reject(new Error('Invalid data format for token method'));
+                        }
+                        this.pollConnexion.query(
+                            `SELECT ${this.aouthTable.id} FROM ${this.database}.${this.aouthTable.table} WHERE ${this.aouthTable.token} = ?`,
+                            [data]
+                        )
+                            .then((res) => {
+                                if (res.length === 1) {
+                                    resolve(res[0][this.aouthTable.id]);
+                                } else {
+                                    reject(new Error('User not found'));
+                                }
+                            })
+                            .catch((err) => {
+                                reject(err);
+                            });
+                        break;
+                    default:
+                        if (typeof data !== 'string' && typeof data !== 'number') {
+                            reject(new Error('Invalid data format for authentication method'));
+                            break;
+                        }
+                        this.pollConnexion.query(
+                            `SELECT ${this.userTable.id} FROM ${this.database}.${this.userTable.table} WHERE ${column} = ?`,
+                            [data]
+                        )
+                            .then((res) => {
+                                if (res.length === 1) {
+                                    resolve(res[0][this.userTable.id]);
+                                } else {
+                                    reject(new Error('User not found'));
+                                }
+                            })
+                            .catch((err) => {
+                                reject(err);
+                            });
+                        break;
+                }
+
+            } else {
+                this.NoPoolConError('GetUserID');
             }
         });
     }

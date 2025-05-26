@@ -1,52 +1,52 @@
 # apiSQL
 
-A RESTful API service for SQL database operations.
+Un service API RESTful pour les opérations sur bases de données SQL.
 
 ## Description
 
-apiSQL provides a simple interface to interact with SQL databases through HTTP requests. It allows you to perform CRUD operations on your database without writing raw SQL queries.
+apiSQL fournit une interface simple pour interagir avec des bases de données SQL via des requêtes HTTP. Il vous permet d'effectuer des opérations CRUD sur votre base de données sans écrire de requêtes SQL brutes.
 
 ## Installation
 
 ```bash
-# Clone the repository
+# Cloner le dépôt
 git clone https://github.com/chokinyan/apiSQL.git
 
-# Enter the project directory
+# Entrer dans le répertoire du projet
 cd apiSQL
 
-# Install dependencies
+# Installer les dépendances
 npm install
 ```
 
 ## Configuration
 
-Create a `.env` file in the root directory of the project and add the following environment variables:
+Créez un fichier `.env` à la racine du projet et ajoutez les variables d'environnement suivantes :
 
 ```
-DB_HOST=localhost       # Database server hostname
-DB_USER=username        # Database username
-DB_PASSWORD=password    # Database password
-DB_DATABASE=database_name     # Database name
-DB_PORT=3306            # Database server port (default: 3306 for MySQL)
-DB_USER_TABLE=users          # Main table name for authentication
-DB_USER_COLLUM=username # Column name for username/email in authentication table
-DB_PASSWORD_COLLUM=password # Column name for password in authentication table
+DB_HOST=localhost       # Nom d'hôte du serveur de base de données
+DB_USER=username        # Nom d'utilisateur de la base de données
+DB_PASSWORD=password    # Mot de passe de la base de données
+DB_DATABASE=database_name     # Nom de la base de données
+DB_PORT=3306            # Port du serveur de base de données (par défaut : 3306 pour MySQL)
+DB_USER_TABLE=users          # Nom de la table principale pour l'authentification
+DB_USER_COLLUM=username # Nom de la colonne pour le nom d'utilisateur/email dans la table d'authentification
+DB_PASSWORD_COLLUM=password # Nom de la colonne pour le mot de passe dans la table d'authentification
 DB_AOUTH_TABLE
 DB_ITEM_TABLE
 DB_USER_NAME_COLLUM
 ```
 
-## Usage
+## Utilisation
 
-Start the server:
+Démarrez le serveur :
 
 ```bash
 npm start
 ```
 
-The API will be available at `http://localhost:3000`.
+L'API sera disponible à l'adresse `http://localhost:3000`.
 
-## License
+## Licence
 
 [MIT](LICENSE)

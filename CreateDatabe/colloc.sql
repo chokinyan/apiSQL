@@ -16,41 +16,40 @@
 
 
 -- Listage de la structure de la base pour testcoloc
-CREATE DATABASE IF NOT EXISTS `testcoloc` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci */;
-USE `testcoloc`;
+CREATE DATABASE IF NOT EXISTS `Collocation` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_ai_ci */;
+USE `Collocation`;
 
 -- Listage de la structure de table testcoloc. auth_tokens
-CREATE TABLE IF NOT EXISTS `auth_tokens` (
+CREATE TABLE IF NOT EXISTS `jetons` (
   `id_Utilisateur` int(11) NOT NULL,
-  `token` varchar(255) DEFAULT NULL,
+  `jeton` varchar(255) DEFAULT NULL,
   KEY `id_Utilisateur` (`id_Utilisateur`),
-  CONSTRAINT `id_Utilisateur` FOREIGN KEY (`id_Utilisateur`) REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `id_Utilisateur` FOREIGN KEY (`id_Utilisateur`) REFERENCES `utilisateur` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- Les données exportées n'étaient pas sélectionnées.
 
 -- Listage de la structure de table testcoloc. items
-CREATE TABLE IF NOT EXISTS `items` (
+CREATE TABLE IF NOT EXISTS `objet` (
   `id_Utilisateur` int(11) NOT NULL,
   `Date_Peremption` date NOT NULL,
   `Nom_produit` varchar(50) NOT NULL,
   `Container` varchar(50) NOT NULL,
   `ImageUrl` varchar(100),
   KEY `id_UtilisateurItem` (`id_Utilisateur`),
-  CONSTRAINT `id_UtilisateurItem` FOREIGN KEY (`id_Utilisateur`) REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `id_UtilisateurItem` FOREIGN KEY (`id_Utilisateur`) REFERENCES `utilisateur` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 -- Les données exportées n'étaient pas sélectionnées.
 
 -- Listage de la structure de table testcoloc. users
-CREATE TABLE IF NOT EXISTS `users` (
+CREATE TABLE IF NOT EXISTS `utilisateur` (
   `id` int(11) NOT NULL,
   `prenom` varchar(255) NOT NULL DEFAULT '',
   `nom` varchar(255) NOT NULL DEFAULT '',
-  `password` varchar(50) NOT NULL DEFAULT '',
+  `motDePasse` varchar(50) NOT NULL DEFAULT '',
   `codePin` varchar(4) NOT NULL,
-  `DataVisage` varchar(50) NOT NULL,
-  `Rfid` varchar(50) NOT NULL,
+  `codeRfid` varchar(50) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 

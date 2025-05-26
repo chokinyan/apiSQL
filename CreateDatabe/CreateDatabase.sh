@@ -15,13 +15,6 @@ DB_PASSWORD=${DB_PASSWORD:-password}
 
 SQL_FILE="$(dirname "$0")/colloc.sql"
 
-# Check if SQL file exists
-if [ ! -f "$SQL_FILE" ]; then
-    echo "Error: $SQL_FILE not found!"
-    echo "Please make sure the SQL file is in the same directory as this script."
-    exit 1
-fi
-
 # Create the database using the SQL file
 echo "Executing SQL file using MariaDB..."
 
