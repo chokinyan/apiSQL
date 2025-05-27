@@ -272,7 +272,7 @@ export default class DB {
                         }
                         this.pollConnexion.query(
                             `SELECT ${this.userTable.id} FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.password} = ? AND ${this.userTable.prenom} = ?`,
-                            [(data as { password: string, name: string }).name, (data as { password: string, name: string }).name]
+                            [(data as { password: string, name: string }).password, (data as { password: string, name: string }).name]
                         )
                             .then((res) => {
                                 if (res.length === 1) {
