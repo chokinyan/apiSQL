@@ -185,7 +185,9 @@ export default class DB {
                         return;
                     }
                     (this.pollConnexion as mariadb.PoolConnection).query(`INSERT INTO ${this.database}.${this.itemTable.table} (${this.itemTable.id},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container}) VALUES (?,?,?,?)`, [userId, item.name, new Date(item.expire), item.container])
-                        .then((_res) => {
+                        .then((res) => {
+                            console.log(res);
+                            
                             this.emitEvent('query', { type: 'PutItemBtUser', success: true, token: token, connexion: this.pollConnexion });
                             resolve(JSON.stringify({ success: true }));
                         })
@@ -199,6 +201,31 @@ export default class DB {
             }
         });
     }
+
+    /*public DeleteItemByUser(token : string,itemId : string) Promise<string> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.GetUserID(token, "token").then((userId) => {
+                    if (userId === undefined || userId === null || userId === '') {
+                        this.emitEvent('error', { operation: 'DeleteItemByUser', error: new Error('User not found') });
+                        reject(new Error('User not found'));
+                        return;
+                    }
+                    (this.pollConnexion as mariadb.PoolConnection).query(`DELETE FROM ${this.database}.${this.itemTable.table} WHERE ${this.itemTable.id} = ? AND ${this.itemTable.name} = ?`, [userId, itemId])
+                        .then((_res) => {
+                            this.emitEvent('query', { type: 'DeleteItemByUser', success: true, token: token, connexion: this.pollConnexion });
+                            resolve(JSON.stringify({ success: true }));
+                        })
+                        .catch((err) => {
+                            this.emitEvent('error', { operation: 'DeleteItemByUser', error: err });
+                            reject(err);
+                        });
+                });
+            } else {
+                this.NoPoolConError('DeleteItemByUser');
+            }
+        });
+    }*/
 
     private CreateAuth(userId: string): Promise<string> {
         return new Promise((resolve, reject) => {

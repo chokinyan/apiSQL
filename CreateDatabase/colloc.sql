@@ -31,11 +31,13 @@ CREATE TABLE IF NOT EXISTS `jetons` (
 
 -- Listage de la structure de table testcoloc. items
 CREATE TABLE IF NOT EXISTS `objet` (
+  `id` int(100) NOT NULL AUTO_INCREMENT,
   `id_Utilisateur` int(11) NOT NULL,
   `Date_Peremption` date NOT NULL,
   `Nom_produit` varchar(50) NOT NULL,
   `Container` varchar(50) NOT NULL,
   `ImageUrl` varchar(100),
+  PRIMARY KEY (`id`),
   KEY `id_UtilisateurItem` (`id_Utilisateur`),
   CONSTRAINT `id_UtilisateurItem` FOREIGN KEY (`id_Utilisateur`) REFERENCES `utilisateur` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
@@ -44,7 +46,7 @@ CREATE TABLE IF NOT EXISTS `objet` (
 
 -- Listage de la structure de table testcoloc. users
 CREATE TABLE IF NOT EXISTS `utilisateur` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `prenom` varchar(255) NOT NULL DEFAULT '',
   `nom` varchar(255) NOT NULL DEFAULT '',
   `motDePasse` varchar(50) NOT NULL DEFAULT '',

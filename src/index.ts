@@ -148,6 +148,34 @@ app.route('/Item')
             res.status(500).json({ error: "Error" });
         }
     })
+/*    .delete((req: Request, res: Response) => {
+        try {
+            if (!req.headers['content-type'] || !req.headers['content-type'].includes('application/json')) {
+                res.status(400).json({ error: "Not JSON" });
+                return;
+            }
+
+            if (!req.body) {
+                res.status(400).json({ error: "Empty body" });
+                return;
+            }
+
+            const body = req.body;
+            if (body && body.token && body.id) {
+                db.DeleteItemByUser(body.token, body.id).then((data) => {
+                    res.status(200).json(data);
+                }).catch((_err) => {
+                    res.status(500).json({ error: "Error" });
+                });
+            } else {
+                res.status(400).json({ error: "Missing token or id" });
+            }
+        }
+        catch (err) {
+            res.status(500).json({ error: "Error" });
+        }
+    }
+);*/
 
 app.route('/Authentification')
     .post((req: Request, res: Response) => {
@@ -316,7 +344,7 @@ https.createServer(option, app).listen(portHttps, () => {
     console.log(`Server is running at https://localhost:${portHttps}`);
 });
 
-mqttClient.subscribe(process.env.MQTT_TOPIC_ETAT_LOCK?.trim() as string, (err, _grant, _packet) => {
+mqttClient.subscribe([process.env.MQTT_TOPIC_ETAT_LOCK_UU?.trim(), process.env.MQTT_TOPIC_ETAT_LOCK_UD?.trim()] as Array<string>, (err, _grant, _packet) => {
     if (err) {
         console.error(err);
         return;
@@ -324,7 +352,26 @@ mqttClient.subscribe(process.env.MQTT_TOPIC_ETAT_LOCK?.trim() as string, (err, _
     console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_ETAT_LOCK?.trim());
     etatPorteConnected = true;
 });
-mqttClient.subscribe(process.env.MQTT_TOPIC_FIN_COURSE?.trim() as string, (err, _grant, _packet) => {
+
+mqttClient.subscribe([process.env.MQTT_TOPIC_FIN_COURSE_UU?.trim(), process.env.MQTT_TOPIC_FIN_COURSE_UD?.trim() ] as Array<string>, (err, _grant, _packet) => {
+    if (err) {
+        console.error(err);
+        return;
+    }
+    console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_FIN_COURSE?.trim());
+    finCourseConnected = true;
+});
+
+mqttClient.subscribe([process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UU?.trim(), process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UD?.trim()] as Array<string>, (err, _grant, _packet) => {
+    if (err) {
+        console.error(err);
+        return;
+    }
+    console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_FIN_COURSE?.trim());
+    finCourseConnected = true;
+});
+
+mqttClient.subscribe([process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UU?.trim(), process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UD?.trim()] as Array<string>, (err, _grant, _packet) => {
     if (err) {
         console.error(err);
         return;
