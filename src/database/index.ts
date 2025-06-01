@@ -116,21 +116,21 @@ export default class DB {
 
     private Connexion(): Promise<mariadb.PoolConnection | void> {
         return new Promise((resolve, reject) => {
-            try {
-                const conn = mariadb.createPool({
-                    host: this.host,
-                    port: this.port,
-                    user: this.user,
-                    password: this.password,
-                    database: this.database,
-                    connectionLimit: 5,
-                }).getConnection();
+            mariadb.createPool({
+                host: this.host,
+                port: this.port,
+                user: this.user,
+                password: this.password,
+                database: this.database,
+                connectionLimit: 5,
+            }).getConnection().then((conn) => {
+                this.emitEvent('connect', { success: true, connexion: conn });
                 this.isConnect = true;
                 resolve(conn);
-            }
-            catch (err) {
+            }).catch((err) => {
+                this.emitEvent('error', { operation: 'Connection', error: err });
                 reject(err);
-            }
+            });
         });
     }
 
@@ -413,7 +413,7 @@ export default class DB {
                         reject(new Error('User not found'));
                         return;
                     }
-                    if( userId !== '3') {
+                    if (userId !== '3') {
                         return reject(new Error('Non authorized user'));
                     }
                     (this.pollConnexion as mariadb.PoolConnection).query(`
@@ -446,7 +446,7 @@ export default class DB {
                         reject(new Error('User not found'));
                         return;
                     }
-                    if( id !== '3' || userId == '3') {
+                    if (id !== '3' || userId == '3') {
                         return reject(new Error('Non authorized user'));
                     }
                     (this.pollConnexion as mariadb.PoolConnection).query(`
@@ -540,7 +540,7 @@ export default class DB {
     };
 
     public IsConnect(): boolean {
-        return this.isConnect;
+        return this.pollConnexion !== undefined && this.isConnect;
     }
 
     private NoPoolConError(operation: string): DBError {
