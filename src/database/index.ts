@@ -1,6 +1,5 @@
-import { randomBytes } from "crypto";
+import { v4 as uuidv4 } from "uuid";
 import mariadb from "mariadb";
-
 export type DBEventType = 'connect' | 'disconnect' | 'error' | 'query' | 'reconnect';
 
 export interface DBError {
@@ -39,6 +38,7 @@ export interface ItemTable {
     /*
     Configuration de la table item, les collones doivent être renseignées
     */
+    UserId: string;
     id: string;
     name: string;
     expire: string;
@@ -156,7 +156,7 @@ export default class DB {
                         reject(new Error('User not found'));
                         return;
                     }
-                    (this.pollConnexion as mariadb.PoolConnection).query(`SELECT ${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container},${this.itemTable.image} FROM ${this.database}.${this.itemTable.table} WHERE ${this.itemTable.id} = ?`, [userId])
+                    (this.pollConnexion as mariadb.PoolConnection).query(`SELECT ${this.itemTable.id},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container},${this.itemTable.image} FROM ${this.database}.${this.itemTable.table} WHERE ${this.itemTable.id} = ?`, [userId])
                         .then((res) => {
                             this.emitEvent('query', { type: 'GetItemByUser', success: true, token: token, connexion: this.pollConnexion });
                             resolve(res);
@@ -184,10 +184,10 @@ export default class DB {
                         reject(new Error('User not found'));
                         return;
                     }
-                    (this.pollConnexion as mariadb.PoolConnection).query(`INSERT INTO ${this.database}.${this.itemTable.table} (${this.itemTable.id},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container}) VALUES (?,?,?,?)`, [userId, item.name, new Date(item.expire), item.container])
+                    (this.pollConnexion as mariadb.PoolConnection).query(`INSERT INTO ${this.database}.${this.itemTable.table} (${this.itemTable.id},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container}) VALUES (?,?,?,?)`, [userId, item.name, new Date(item.expire).toISOString(), item.container])
                         .then((res) => {
                             console.log(res);
-                            
+
                             this.emitEvent('query', { type: 'PutItemBtUser', success: true, token: token, connexion: this.pollConnexion });
                             resolve(JSON.stringify({ success: true }));
                         })
@@ -202,7 +202,7 @@ export default class DB {
         });
     }
 
-    /*public DeleteItemByUser(token : string,itemId : string) Promise<string> {
+    public DeleteItemByUser(token: string, itemId: string): Promise<string> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.GetUserID(token, "token").then((userId) => {
@@ -211,26 +211,30 @@ export default class DB {
                         reject(new Error('User not found'));
                         return;
                     }
-                    (this.pollConnexion as mariadb.PoolConnection).query(`DELETE FROM ${this.database}.${this.itemTable.table} WHERE ${this.itemTable.id} = ? AND ${this.itemTable.name} = ?`, [userId, itemId])
+                    (this.pollConnexion as mariadb.PoolConnection).query(`DELETE FROM ${this.database}.${this.itemTable.table} WHERE ${this.itemTable.id} = ?`, [itemId])
                         .then((_res) => {
                             this.emitEvent('query', { type: 'DeleteItemByUser', success: true, token: token, connexion: this.pollConnexion });
                             resolve(JSON.stringify({ success: true }));
-                        })
+                        }
+                        )
                         .catch((err) => {
                             this.emitEvent('error', { operation: 'DeleteItemByUser', error: err });
                             reject(err);
                         });
+                }).catch((err) => {
+                    this.emitEvent('error', { operation: 'DeleteItemByUser', error: err });
+                    reject(err);
                 });
             } else {
                 this.NoPoolConError('DeleteItemByUser');
             }
         });
-    }*/
+    }
 
     private CreateAuth(userId: string): Promise<string> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
-                const token = randomBytes(32).toString('base64').replace(/\//g, '0').replace(/\+/g, '1').replace(/=/g, '2');
+                const token = uuidv4();
                 this.pollConnexion.query(`INSERT INTO ${this.database}.${this.aouthTable.table} (${this.aouthTable.id},${this.aouthTable.token}) VALUES (?,?)`, [userId, token])
                     .then((_res) => {
                         this.emitEvent('query', { type: 'CreateAuth', success: true, userId: userId, connexion: this.pollConnexion });
@@ -290,6 +294,11 @@ export default class DB {
                     column = this.userTable.pin;
                 } else if (method === 'visage') {
                     column = this.userTable.prenom;
+                }
+
+                if (!column) {
+                    reject(new Error(`Invalid column for method: ${method}`));
+                    return;
                 }
 
                 switch (method) {
@@ -359,6 +368,115 @@ export default class DB {
         });
     }
 
+    public GetUserInfo(token: string, id: string | number): Promise<string | any> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.GetUserID(token, "token").then((userId) => {
+                    if (userId === undefined || userId === null || userId === '') {
+                        this.emitEvent('error', { operation: 'GetUser', error: new Error('User not found') });
+                        reject(new Error('User not found'));
+                        return;
+                    }
+                    if (id !== '3' || userId == '3') {
+                        return reject(new Error('Non authorized user'));
+                    }
+                    (this.pollConnexion as mariadb.PoolConnection).query(`SELECT ${this.userTable.prenom},${this.userTable.nom} FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.id} = ?`, [id])
+                        .then((res) => {
+                            if (res.length === 1) {
+                                this.emitEvent('query', { type: 'GetUser', success: true, token: token, connexion: this.pollConnexion });
+                                resolve(typeof res[0] === 'object' ? JSON.stringify(res[0]) : res[0]);
+                            } else {
+                                this.emitEvent('error', { operation: 'GetUser', error: new Error('User not found') });
+                                reject(new Error('User not found'));
+                            }
+                        })
+                        .catch((err) => {
+                            this.emitEvent('error', { operation: 'GetUser', error: err });
+                            reject(err);
+                        });
+                }).catch((err) => {
+                    this.emitEvent('error', { operation: 'GetUser', error: err });
+                    reject(err);
+                });
+            } else {
+                this.NoPoolConError('GetUser');
+            }
+        });
+    };
+
+    public CreateUser(token: string, user: { nom: string, prenom: string, password: string, pin?: string, rfid?: string }): Promise<Object> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.GetUserID(token, "token").then((userId) => {
+                    if (userId === undefined || userId === null || userId === '') {
+                        this.emitEvent('error', { operation: 'CreateUser', error: new Error('User not found') });
+                        reject(new Error('User not found'));
+                        return;
+                    }
+                    if( userId !== '3') {
+                        return reject(new Error('Non authorized user'));
+                    }
+                    (this.pollConnexion as mariadb.PoolConnection).query(`
+                        INSERT INTO ${this.database}.${this.userTable.table} (${this.userTable.nom}, ${this.userTable.prenom}, ${this.userTable.password}, ${this.userTable.pin}, ${this.userTable.rfid})
+                        VALUES (?, ?, ?, ?, ?)`, [user.nom, user.prenom, user.password, user.pin || '', user.rfid || ''])
+                        .then((_res) => {
+                            this.emitEvent('query', { type: 'CreateUser', success: true, token: token, connexion: this.pollConnexion });
+                            resolve({ success: true });
+                        })
+                        .catch((err) => {
+                            this.emitEvent('error', { operation: 'CreateUser', error: err });
+                            reject(err);
+                        });
+                }).catch((err) => {
+                    this.emitEvent('error', { operation: 'CreateUser', error: err });
+                    reject(err);
+                });
+            } else {
+                this.NoPoolConError('CreateUser');
+            }
+        });
+    };
+
+    public DeleteUser(token: string, id: string | number): Promise<Object> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                this.GetUserID(token, "token").then((userId) => {
+                    if (userId === undefined || userId === null || userId === '') {
+                        this.emitEvent('error', { operation: 'DeleteUser', error: new Error('User not found') });
+                        reject(new Error('User not found'));
+                        return;
+                    }
+                    if( id !== '3' || userId == '3') {
+                        return reject(new Error('Non authorized user'));
+                    }
+                    (this.pollConnexion as mariadb.PoolConnection).query(`
+                        UPDATE ${this.database}.${this.userTable.table} SET
+                        ${this.userTable.prenom}='',
+                        ${this.userTable.nom}='',
+                        ${this.userTable.password}='',
+                        ${this.userTable.pin}='',
+                        ${this.userTable.rfid}=''
+                        
+                        WHERE ${this.userTable.id} = ?`, [userId])
+
+                        .then((_res) => {
+                            this.emitEvent('query', { type: 'DeleteUser', success: true, token: token, connexion: this.pollConnexion });
+                            resolve({ success: true });
+                        })
+                        .catch((err) => {
+                            this.emitEvent('error', { operation: 'DeleteUser', error: err });
+                            reject(err);
+                        });
+                }).catch((err) => {
+                    this.emitEvent('error', { operation: 'DeleteUser', error: err });
+                    reject(err);
+                });
+            } else {
+                this.NoPoolConError('DeleteUser');
+            }
+        });
+    };
+
     public Deconnexion(token: string): Promise<Object> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
@@ -376,6 +494,8 @@ export default class DB {
             }
         });
     }
+
+    // Closes the database connection and releases the pool connection
 
     public async CloseConnexion(): Promise<void> {
         if (this.pollConnexion) {
