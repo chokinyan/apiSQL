@@ -296,11 +296,6 @@ export default class DB {
                     column = this.userTable.prenom;
                 }
 
-                if (!column) {
-                    reject(new Error(`Invalid column for method: ${method}`));
-                    return;
-                }
-
                 switch (method) {
                     case 'password':
                         if (typeof data !== 'object' || !data.password || !data.name) {
