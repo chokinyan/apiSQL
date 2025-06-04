@@ -23,6 +23,7 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.1.0",
     "mariadb": "^3.4.0",
-    "mqtt": "^5.10.4"
+    "mqtt": "^5.10.4",
+    "uuid": "^11.1.0"
   }
 }

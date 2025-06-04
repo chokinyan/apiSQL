@@ -434,9 +434,6 @@ mqttClient.on("error", (err) => {
 });
 
 /* Start */
-while (!db.IsConnect() && !mqttClient.connected) {
-    console.log("Waiting for connection");
-}
 console.log(`Database is running at ${process.env.DB_HOST}:${process.env.DB_PORT}`);
 
 http.createServer(app).listen(portHttp, () => {
