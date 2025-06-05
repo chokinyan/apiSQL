@@ -156,7 +156,8 @@ export default class DB {
                         reject(new Error('User not found'));
                         return;
                     }
-                    (this.pollConnexion as mariadb.PoolConnection).query(`SELECT ${this.itemTable.id},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container},${this.itemTable.image} FROM ${this.database}.${this.itemTable.table} WHERE ${this.itemTable.id} = ? AND ${this.itemTable.container}`, [userId, compartiment])
+                    console.log(compartiment);
+                    (this.pollConnexion as mariadb.PoolConnection).query(`SELECT ${this.itemTable.id},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container},${this.itemTable.image} FROM ${this.database}.${this.itemTable.table} WHERE ${this.itemTable.UserId} = ? AND ${this.itemTable.container} = ?`, [userId, compartiment])
                         .then((res) => {
                             this.emitEvent('query', { type: 'GetItemByUser', success: true, token: token, connexion: this.pollConnexion });
                             resolve(res);
