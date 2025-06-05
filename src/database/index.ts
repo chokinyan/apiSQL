@@ -147,7 +147,7 @@ export default class DB {
         });
     }
 
-    public GetItemByUser(token: string): Promise<Array<UserItem>> {
+    public GetItemByUser(token: string,compartiment : string = "sec"): Promise<Array<UserItem>> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.GetUserID(token, "token").then((userId) => {
@@ -156,7 +156,7 @@ export default class DB {
                         reject(new Error('User not found'));
                         return;
                     }
-                    (this.pollConnexion as mariadb.PoolConnection).query(`SELECT ${this.itemTable.id},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container},${this.itemTable.image} FROM ${this.database}.${this.itemTable.table} WHERE ${this.itemTable.id} = ?`, [userId])
+                    (this.pollConnexion as mariadb.PoolConnection).query(`SELECT ${this.itemTable.id},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container},${this.itemTable.image} FROM ${this.database}.${this.itemTable.table} WHERE ${this.itemTable.id} = ? AND ${this.itemTable.container}`, [userId, compartiment])
                         .then((res) => {
                             this.emitEvent('query', { type: 'GetItemByUser', success: true, token: token, connexion: this.pollConnexion });
                             resolve(res);

@@ -193,7 +193,7 @@ app.route('/Item')
         const params = req.query;
 
         if (params && params.token) {
-            db.GetItemByUser(params.token as string).then((data) => {
+            db.GetItemByUser(params.token as string,params.compartiement as string).then((data) => {
                 res.status(200).json(data);
             }).catch((_err) => {
                 res.status(500).json({ error: "Error" });
