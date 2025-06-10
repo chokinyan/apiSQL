@@ -5,7 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import database from './database';
 import mqtt from 'mqtt';
-import bodyParser from 'body-parser';
+import bodyParser, { json } from 'body-parser';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 
@@ -194,7 +194,9 @@ app.route('/Item')
 
         if (params && params.token) {
             db.GetItemByUser(params.token as string,params.compartiement as string).then((data) => {
-                res.status(200).json(data);
+                res.status(200).json({
+                    result: data
+                });
             }).catch((_err) => {
                 res.status(500).json({ error: "Error" });
             });
