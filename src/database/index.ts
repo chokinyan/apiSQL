@@ -71,6 +71,15 @@ export interface UserItem {
     image?: string;
 }
 
+export interface ObjectItem {
+    id_Utilisateur: string,
+    id: string,
+    Date_Peremption: string,
+    Nom_produit: string,
+    Container: string,
+    ImageUrl?: string,
+}
+
 export type AuthMethods = "rfid" | "visage" | "pin" | "password" | "token";
 
 export type AuthData = string | { password: string, name: string };
@@ -147,7 +156,7 @@ export default class DB {
         });
     }
 
-    public GetItemByUser(token: string,compartiment : string = "sec"): Promise<Array<UserItem>> {
+    public GetItemByUser(token: string, compartiment: string = "sec"): Promise<Array<UserItem>> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.GetUserID(token, "token").then((userId) => {
@@ -188,7 +197,7 @@ export default class DB {
                     (this.pollConnexion as mariadb.PoolConnection).query(`INSERT INTO ${this.database}.${this.itemTable.table} (${this.itemTable.UserId},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container},${this.itemTable.image}) VALUES (?,?,?,?,?)`, [userId, item.name, new Date(item.expire), item.container, item?.image])
                         .then((res) => {
                             console.log(res);
-                    
+
                             this.emitEvent('query', { type: 'PutItemBtUser', success: true, token: token, connexion: this.pollConnexion });
                             resolve(JSON.stringify({ success: true }));
                         })
@@ -284,7 +293,7 @@ export default class DB {
         });
     }
 
-    private GetUserID(data: AuthData, method: AuthMethods): Promise<string> {
+    public GetUserID(data: AuthData, method: AuthMethods): Promise<string> {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
 
@@ -487,6 +496,42 @@ export default class DB {
                     });
             } else {
                 this.NoPoolConError('Deconnexion');
+            }
+        });
+    }
+
+    public VerifPeremption(): Promise<[Object[], Object[]]> {
+        return new Promise((resolve, reject) => {
+            if (this.pollConnexion) {
+                const currentDate = new Date();
+
+                (this.pollConnexion as mariadb.PoolConnection).query(
+                    `SELECT ${this.itemTable.UserId}, ${this.itemTable.id}, ${this.itemTable.name}, ${this.itemTable.expire}, ${this.itemTable.container}, ${this.itemTable.image} 
+                     FROM ${this.database}.${this.itemTable.table} 
+                     WHERE DATE(${this.itemTable.expire}) < DATE(DATE_ADD(NOW(), INTERVAL 1 DAY))`,
+                    []
+                )
+                    .then((res: Array<any>) => {
+                        this.emitEvent('query', { type: 'VerifPeremption', success: true, connexion: this.pollConnexion });
+                        const Response: [any[], any[]] = [[], []];
+                        res.forEach((obj: any, _index: number, _array: any[]) => {
+                            if (obj[this.itemTable.UserId] == "1") {
+                                Response[0].push(obj);
+                            }
+                            else if (obj[this.itemTable.UserId] == "2") {
+                                Response[1].push(obj);
+                            }
+                        })
+
+                        resolve(Response);
+                    })
+                    .catch((err) => {
+                        this.emitEvent('error', { operation: 'VerifPeremption', error: err });
+                        reject(err);
+                    });
+            } else {
+                this.NoPoolConError('VerifPeremption');
+                reject(new Error('No pool connection'));
             }
         });
     }

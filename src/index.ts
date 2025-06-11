@@ -23,9 +23,10 @@ const base64Decoding = (data: string, isJson: boolean = false) => {
     return Buffer.from(data, 'base64').toString('utf-8');
 }
 
-let etatPorte: string = "0";
-let finCourse: string = "0";
-let temperature: string = "0";
+let etatPorte: Array<string> = ["0", "0"];
+let finCourse: Array<string> = ["0", "0"];
+let finCourseFrais: Array<string> = ["0", "0"];
+let temperature: Array<string> = ["0", "0"];
 
 const db: database = new database({
     host: process.env.DB_HOST as string,
@@ -72,7 +73,7 @@ const portHttp = 3000;
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: 500, // Limit each IP to 100 requests per windowMs
     message: base64Encoding("{error : Too many requests}"),
 });
 
@@ -101,20 +102,32 @@ app.get('/FinCourse', (_req: Request, res: Response) => {
     res.status(200).json({ etat: finCourse });
 });
 
-app.get('/Temperature', (_req: Request, res: Response) => {
+app.get('/Temperature', (req: Request, res: Response) => {
     if (!mqttClient.connected) {
         res.status(500).json({ error: "MQTT not connected" });
         return;
     }
-    
-    res.status(200).json({ temperature: temperature });
+
+    const params = req.query;
+
+    if (params && params.token) {
+        db.GetUserID(params.token as string, "token").then((id) => {
+            try {
+                res.status(200).json({ temperature: temperature[Number(id) - 1] });
+            }
+            catch {
+                res.status(400).json({ error: "error wrong user temperature" })
+            }
+        })
+    }
+
 });
 
 app.route('/User')
     .get((req: Request, res: Response) => {
         const params = req.query;
         if (params && params.token) {
-            db.GetUserInfo(params.token as string,params.id as string|number).then((data) => {
+            db.GetUserInfo(params.token as string, params.id as string | number).then((data) => {
                 if (data) {
                     res.status(200).json(data);
                 } else {
@@ -133,7 +146,7 @@ app.route('/User')
                 res.status(400).json({ error: "Not JSON" });
                 return;
             }
-            
+
             if (!req.body) {
                 res.status(400).json({ error: "Empty body" });
                 return;
@@ -166,7 +179,7 @@ app.route('/User')
                 res.status(400).json({ error: "Not JSON" });
                 return;
             }
-            
+
             if (!req.body) {
                 res.status(400).json({ error: "Empty body" });
                 return;
@@ -193,7 +206,7 @@ app.route('/Item')
         const params = req.query;
 
         if (params && params.token) {
-            db.GetItemByUser(params.token as string,params.compartiement as string).then((data) => {
+            db.GetItemByUser(params.token as string, params.compartiement as string).then((data) => {
                 res.status(200).json({
                     result: data
                 });
@@ -263,7 +276,7 @@ app.route('/Item')
             res.status(500).json({ error: "Error" });
         }
     }
-);
+    );
 
 app.route('/Authentification')
     .post((req: Request, res: Response) => {
@@ -373,9 +386,19 @@ app.route('/EtatPorte')
             }
 
             const body = req.body;
-            if (body && body.etat && /^[0-1]{1}$/.test(body.etat)) {
-                mqttClient.publish(process.env.MQTT_TOPIC_ETAT_LOCK?.trim() as string, `${body.etat}`);
-                res.status(200).json({ etat: body.etat });
+            if (body && body.etat && /^[0-1]$/.test(body.etat)) {
+                db.GetUserID(body.token as string, "token").then((id) => {
+                    let user: string = "";
+                    if (id == "1") {
+                        user = process.env.MQTT_TOPIC_ETAT_LOCK_UU as string;
+                    }
+                    else if (id == "2") {
+                        user = process.env.MQTT_TOPIC_ETAT_LOCK_UD as string;
+                    }
+
+                    mqttClient.publish(user, `${body.etat}`);
+                    res.status(200).json({ etat: body.etat, user: id });
+                })
             } else {
                 res.status(400).json("{error : Missing etat}");
             }
@@ -392,6 +415,12 @@ app.route('/EtatPorte')
         res.status(200).json({ etat: etatPorte });
     });
 
+app.get('/alerte', (_req: Request, res: Response) => {
+    db.VerifPeremption().then((value) => {
+        res.status(200).send(value);
+    })
+});
+
 /* Database */
 db.on('error', (data) => {
     console.error(data);
@@ -399,31 +428,30 @@ db.on('error', (data) => {
 
 /* MQTT */
 mqttClient.on('message', (topic, payload, _packet) => {
-    console.log(topic);
+    //console.log(topic);
     switch (topic) {
         case process.env.MQTT_TOPIC_ETAT_LOCK_UU:
+            etatPorte[0] = payload.toString() === "1" ? "1" : "0";
+            break;
         case process.env.MQTT_TOPIC_ETAT_LOCK_UD:
-            etatPorte = payload.toString() === "1" ? "1" : "0";
+            etatPorte[1] = payload.toString() === "1" ? "1" : "0";
             break;
         case process.env.MQTT_TOPIC_FIN_COURSE_UU:
+            finCourse[0] = payload.toString() === "1" ? "1" : "0";
         case process.env.MQTT_TOPIC_FIN_COURSE_UD:
-            finCourse = payload.toString() === "1" ? "1" : "0";
+            finCourse[1] = payload.toString() === "1" ? "1" : "0";
             break;
         case process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UU:
+            finCourseFrais[0] = payload.toString() === "1" ? "1" : "0";
+            break;
         case process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UD:
-            finCourse = payload.toString() === "1" ? "1" : "0";
+            finCourseFrais[1] = payload.toString() === "1" ? "1" : "0";
             break;
         case process.env.MQTT_TOPIC_TEMP_UU:
+            temperature[0] = payload.toString();
+            break;
         case process.env.MQTT_TOPIC_TEMP_UD:
-            if(!payload || payload.length === 0) {
-                console.log("Error: Empty payload for temperature topic");
-                return;
-            }
-            if (isNaN(Number(payload.toString()))) {
-                console.log("Error: Invalid temperature value");
-                return;
-            }
-            temperature = payload.toString();
+            temperature[1] = payload.toString();
             break;
         default:
             console.log("Error: Invalid topic");
@@ -446,34 +474,42 @@ https.createServer(option, app).listen(portHttps, () => {
     console.log(`Server is running at https://localhost:${portHttps}`);
 });
 
-mqttClient.subscribe([process.env.MQTT_TOPIC_ETAT_LOCK_UU?.trim(), process.env.MQTT_TOPIC_ETAT_LOCK_UD?.trim()] as Array<string>, (err, _grant, _packet) => {
+mqttClient.subscribe([process.env.MQTT_TOPIC_ETAT_LOCK_UU, process.env.MQTT_TOPIC_ETAT_LOCK_UD] as Array<string>, (err, _grant, _packet) => {
     if (err) {
         console.error(err);
         return;
     }
-    console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_ETAT_LOCK?.trim());
+    console.log("Subscribe to topic: " + [process.env.MQTT_TOPIC_ETAT_LOCK_UU, process.env.MQTT_TOPIC_ETAT_LOCK_UD]);
 });
 
-mqttClient.subscribe([process.env.MQTT_TOPIC_FIN_COURSE_UU?.trim(), process.env.MQTT_TOPIC_FIN_COURSE_UD?.trim() ] as Array<string>, (err, _grant, _packet) => {
+mqttClient.subscribe([process.env.MQTT_TOPIC_FIN_COURSE_UU, process.env.MQTT_TOPIC_FIN_COURSE_UD] as Array<string>, (err, _grant, _packet) => {
     if (err) {
         console.error(err);
         return;
     }
-    console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_FIN_COURSE?.trim());
+    console.log("Subscribe to topic: " + [process.env.MQTT_TOPIC_FIN_COURSE_UU, process.env.MQTT_TOPIC_FIN_COURSE_UD]);
 });
 
-mqttClient.subscribe([process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UU?.trim(), process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UD?.trim()] as Array<string>, (err, _grant, _packet) => {
+mqttClient.subscribe([process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UU, process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UD] as Array<string>, (err, _grant, _packet) => {
     if (err) {
         console.error(err);
         return;
     }
-    console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_FIN_COURSE?.trim());
+    console.log("Subscribe to topic: " + [process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UU, process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UD]);
 });
 
-mqttClient.subscribe([process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UU?.trim(), process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UD?.trim()] as Array<string>, (err, _grant, _packet) => {
+mqttClient.subscribe([process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UU, process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UD] as Array<string>, (err, _grant, _packet) => {
     if (err) {
         console.error(err);
         return;
     }
-    console.log("Subscribe to topic: " + process.env.MQTT_TOPIC_FIN_COURSE?.trim());
+    console.log("Subscribe to topic: " + [process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UU, process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UD]);
+});
+
+mqttClient.subscribe([process.env.MQTT_TOPIC_TEMP_UU, process.env.MQTT_TOPIC_TEMP_UD] as Array<string>, (err, _grant, _packet) => {
+    if (err) {
+        console.error(err);
+        return;
+    }
+    console.log("Subscribe to topic: " + [process.env.MQTT_TOPIC_TEMP_UU, process.env.MQTT_TOPIC_TEMP_UD]);
 });
