@@ -62,6 +62,7 @@ export interface AuthResponse {
     token: string;
     nom: string;
     prenom: string;
+    id: string;
 }
 
 export interface UserItem {
@@ -165,7 +166,7 @@ export default class DB {
                         reject(new Error('User not found'));
                         return;
                     }
-                    console.log(compartiment);
+                    (compartiment);
                     (this.pollConnexion as mariadb.PoolConnection).query(`SELECT ${this.itemTable.id},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container},${this.itemTable.image} FROM ${this.database}.${this.itemTable.table} WHERE ${this.itemTable.UserId} = ? AND ${this.itemTable.container} = ?`, [userId, compartiment])
                         .then((res) => {
                             this.emitEvent('query', { type: 'GetItemByUser', success: true, token: token, connexion: this.pollConnexion });
@@ -196,7 +197,7 @@ export default class DB {
                     }
                     (this.pollConnexion as mariadb.PoolConnection).query(`INSERT INTO ${this.database}.${this.itemTable.table} (${this.itemTable.UserId},${this.itemTable.name},${this.itemTable.expire},${this.itemTable.container},${this.itemTable.image}) VALUES (?,?,?,?,?)`, [userId, item.name, new Date(item.expire), item.container, item?.image])
                         .then((res) => {
-                            console.log(res);
+                            (res);
 
                             this.emitEvent('query', { type: 'PutItemBtUser', success: true, token: token, connexion: this.pollConnexion });
                             resolve(JSON.stringify({ success: true }));
@@ -264,12 +265,13 @@ export default class DB {
         return new Promise((resolve, reject) => {
             if (this.pollConnexion) {
                 this.GetUserID(data, method).then((userId) => {
-                    (this.pollConnexion as mariadb.PoolConnection).query(`SELECT ${this.userTable.prenom},${this.userTable.nom} FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.id} = ?`, [userId])
+                    (this.pollConnexion as mariadb.PoolConnection).query(`SELECT ${this.userTable.prenom},${this.userTable.nom},${this.userTable.id} FROM ${this.database}.${this.userTable.table} WHERE ${this.userTable.id} = ?`, [userId])
                         .then((res) => {
                             if (res.length === 1) {
                                 this.CreateAuth(userId).then((token) => {
                                     resolve({
                                         token: token,
+                                        id: res[0][this.userTable.id],
                                         nom: res[0][this.userTable.nom],
                                         prenom: res[0][this.userTable.prenom]
                                     });
@@ -451,11 +453,13 @@ export default class DB {
                         reject(new Error('User not found'));
                         return;
                     }
-                    if (id !== '3' || userId == '3') {
+                    if (id === '3' || userId == '3' || id == 3) {
                         return reject(new Error('Non authorized user'));
                     }
                     (this.pollConnexion as mariadb.PoolConnection).query(`
-                        UPDATE ${this.database}.${this.userTable.table} SET
+
+                        UPDATE ${this.database}.${this.userTable.table} 
+                        SET
                         ${this.userTable.prenom}='',
                         ${this.userTable.nom}='',
                         ${this.userTable.password}='',

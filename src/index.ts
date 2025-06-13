@@ -386,7 +386,7 @@ app.route('/EtatPorte')
             }
 
             const body = req.body;
-            if (body && body.etat && /^[0-1]$/.test(body.etat)) {
+            if (body && (typeof body.etat === 'string' || typeof body.etat === 'number') && /^[0-1]$/.test(String(body.etat))) {
                 db.GetUserID(body.token as string, "token").then((id) => {
                     let user: string = "";
                     if (id == "1") {
@@ -438,6 +438,7 @@ mqttClient.on('message', (topic, payload, _packet) => {
             break;
         case process.env.MQTT_TOPIC_FIN_COURSE_UU:
             finCourse[0] = payload.toString() === "1" ? "1" : "0";
+            break;
         case process.env.MQTT_TOPIC_FIN_COURSE_UD:
             finCourse[1] = payload.toString() === "1" ? "1" : "0";
             break;
@@ -461,6 +462,7 @@ mqttClient.on('message', (topic, payload, _packet) => {
 
 mqttClient.on("error", (err) => {
     console.log(err);
+    mqttClient.reconnect();
 });
 
 /* Start */
@@ -488,14 +490,6 @@ mqttClient.subscribe([process.env.MQTT_TOPIC_FIN_COURSE_UU, process.env.MQTT_TOP
         return;
     }
     console.log("Subscribe to topic: " + [process.env.MQTT_TOPIC_FIN_COURSE_UU, process.env.MQTT_TOPIC_FIN_COURSE_UD]);
-});
-
-mqttClient.subscribe([process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UU, process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UD] as Array<string>, (err, _grant, _packet) => {
-    if (err) {
-        console.error(err);
-        return;
-    }
-    console.log("Subscribe to topic: " + [process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UU, process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UD]);
 });
 
 mqttClient.subscribe([process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UU, process.env.MQTT_TOPIC_FIN_COURSE_FRAIS_UD] as Array<string>, (err, _grant, _packet) => {
